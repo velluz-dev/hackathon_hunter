@@ -34,6 +34,7 @@ Bookmarks are stored in your browser's `localStorage`. They aren't synced betwee
 | lablab.ai | Event list embedded in `lablab.ai/ai-hackathons` (sponsor-run AI hackathons, e.g. AMD) | Event start time |
 | Luma    | Public discover search for "hackathon". Results favor events near wherever the app runs, so Myanmar gets its own searches ("Myanmar", "Yangon", "Mandalay"…), keeping events Luma places in Myanmar | Event start time |
 | NASA Space Apps | Public GraphQL API behind `spaceappschallenge.org`. Lists each upcoming challenge once (worldwide, with local event and registration counts) plus its local events in Myanmar | Event start time |
+| Local picks | Hand-written list in `lib/sources/curated.ts` for Myanmar events no site lists (e.g. the YTU Science Festival). Dates can be left empty ("Dates TBA"); each entry hides itself after its `hideAfter` date | Event start time |
 
 | Reddit  | Atom feed of r/hackathon + r/hackathons (Reddit blocks anonymous JSON). Posts are classified by keyword rules in `lib/sources/reddit.ts` | — |
 

@@ -14,10 +14,11 @@ const SOURCE_NAMES: Partial<Record<Hackathon["source"], string>> = {
   lablab: "lablab.ai",
   luma: "Luma",
   spaceapps: "NASA Space Apps",
+  curated: "Local pick",
 };
 
 // Sources whose organizer field is a readable list of names worth showing.
-const SHOWS_ORGANIZER = new Set<Hackathon["source"]>(["devpost", "cerebralvalley", "luma"]);
+const SHOWS_ORGANIZER = new Set<Hackathon["source"]>(["devpost", "cerebralvalley", "luma", "curated"]);
 
 function sourceLabel(h: Hackathon): string {
   const named = SOURCE_NAMES[h.source];

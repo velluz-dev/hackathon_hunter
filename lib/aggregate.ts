@@ -2,6 +2,7 @@ import { detectCompanies } from "./companies";
 import { isMyanmar } from "./myanmar";
 import { safeUrl } from "./safeUrl";
 import { fetchCerebralValley } from "./sources/cerebralvalley";
+import { fetchCurated } from "./sources/curated";
 import { fetchDevpost } from "./sources/devpost";
 import { fetchLablab } from "./sources/lablab";
 import { fetchLuma, fetchLumaMyanmar } from "./sources/luma";
@@ -19,6 +20,8 @@ const SOURCES: [Source, () => Promise<RawHackathon[]>][] = [
   ["luma", fetchLuma],
   ["luma", fetchLumaMyanmar],
   ["spaceapps", fetchSpaceApps],
+  // Last, so a scraped listing of the same event (with real dates) wins over the hand-written one.
+  ["curated", fetchCurated],
 ];
 
 const titleKey = (t: string) => t.toLowerCase().replace(/[^a-z0-9]/g, "");

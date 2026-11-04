@@ -1,5 +1,8 @@
-/** "manual" = added by the user from a link (e.g. a LinkedIn or Facebook post). */
-export type Source = "devpost" | "mlh" | "cerebralvalley" | "lablab" | "luma" | "spaceapps" | "manual";
+/**
+ * "manual" = added by the user from a link (e.g. a LinkedIn or Facebook post).
+ * "curated" = hand-picked local events in lib/sources/curated.ts.
+ */
+export type Source = "devpost" | "mlh" | "cerebralvalley" | "lablab" | "luma" | "spaceapps" | "curated" | "manual";
 export type Mode = "online" | "in-person" | "hybrid";
 
 export interface Hackathon {
