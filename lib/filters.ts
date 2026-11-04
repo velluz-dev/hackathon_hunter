@@ -1,8 +1,6 @@
 import type { Hackathon, Mode, Source } from "./types";
 
 export type SortKey = "deadline" | "prize" | "participants" | "newest";
-/** Where a hackathon's deadline stands: still ahead, already passed, or not announced. */
-export type RegStatus = "any" | "open" | "started" | "tba";
 
 export interface FilterState {
   q: string;
@@ -15,8 +13,6 @@ export interface FilterState {
   bigTech: boolean; // run or sponsored by any big tech company
   companies: string[]; // run or sponsored by one of these
   closingSoon: boolean; // deadline within 7 days
-  beginner: boolean; // tagged or named as beginner friendly
-  status: RegStatus;
   from: string; // yyyy-mm-dd, compared against start date
   to: string;
   sort: SortKey;
@@ -33,8 +29,6 @@ export const DEFAULT_FILTERS: FilterState = {
   bigTech: false,
   companies: [],
   closingSoon: false,
-  beginner: false,
-  status: "any",
   from: "",
   to: "",
   sort: "deadline",
@@ -43,7 +37,6 @@ export const DEFAULT_FILTERS: FilterState = {
 const MODES = ["all", "online", "in-person", "hybrid"];
 const SOURCES = ["all", "devpost", "mlh", "cerebralvalley", "lablab", "luma", "spaceapps", "curated"];
 const SORTS = ["deadline", "prize", "participants", "newest"];
-const STATUSES = ["any", "open", "started", "tba"];
 
 export function filtersFromParams(p: URLSearchParams): FilterState {
   const pick = <T extends string>(key: string, allowed: string[], fallback: T) =>
@@ -59,8 +52,6 @@ export function filtersFromParams(p: URLSearchParams): FilterState {
     bigTech: p.get("bigtech") === "1",
     companies: p.get("co")?.split(",").filter(Boolean) ?? [],
     closingSoon: p.get("closing") === "1",
-    beginner: p.get("beginner") === "1",
-    status: pick("status", STATUSES, "any"),
     from: p.get("from") ?? "",
     to: p.get("to") ?? "",
     sort: pick("sort", SORTS, "deadline"),
@@ -79,8 +70,6 @@ export function filtersToParams(f: FilterState): URLSearchParams {
   if (f.bigTech) p.set("bigtech", "1");
   if (f.companies.length) p.set("co", f.companies.join(","));
   if (f.closingSoon) p.set("closing", "1");
-  if (f.beginner) p.set("beginner", "1");
-  if (f.status !== "any") p.set("status", f.status);
   if (f.from) p.set("from", f.from);
   if (f.to) p.set("to", f.to);
   if (f.sort !== "deadline") p.set("sort", f.sort);
@@ -106,12 +95,6 @@ export function applyFilters(list: Hackathon[], f: FilterState, now: number): Ha
     if (f.closingSoon) {
       const d = h.deadline ? Date.parse(h.deadline) : NaN;
       if (!(d > now && d - now <= 7 * 86_400_000)) return false;
-    }
-    if (f.beginner && ![h.title, ...h.themes].some((s) => /beginner/i.test(s))) return false;
-    if (f.status !== "any") {
-      const d = h.deadline ? Date.parse(h.deadline) : NaN;
-      const status = Number.isNaN(d) ? "tba" : d > now ? "open" : "started";
-      if (status !== f.status) return false;
     }
     const start = h.startDate ? Date.parse(h.startDate) : null;
     if (from !== null && (start === null || start < from)) return false;

@@ -1,21 +1,21 @@
-import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
-import { AppShell } from "@/components/AppShell";
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import { Nav } from "@/components/Nav";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
   title: "Hackathon Hunter",
-  description: "Find, track and never miss a hackathon deadline — live listings from Devpost, MLH, Luma and more.",
-};
-
-export const viewport: Viewport = {
-  themeColor: "#0b0b12",
-  colorScheme: "dark",
+  description: "Find, track and never miss a hackathon deadline — live listings from Devpost and MLH.",
 };
 
 export default function RootLayout({
@@ -25,8 +25,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} antialiased`}>
-        <AppShell>{children}</AppShell>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Nav />
+        <main className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:pt-8">{children}</main>
       </body>
     </html>
   );

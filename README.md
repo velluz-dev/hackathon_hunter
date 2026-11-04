@@ -14,10 +14,10 @@ For production: `npm run build && npm start`.
 
 ## Features
 
-- **Browse & filter**: search by name, organizer or theme; filter by format (online / in person / hybrid), location, source, minimum prize, start-date range, categories, registration status, beginner friendly, big tech companies, and "closing within 7 days". Sort by deadline, prize, registrations or start date. Filters are kept in the URL, so you can bookmark or share a view.
+- **Browse & filter**: search by name, organizer or theme; filter by format (online / in person / hybrid), location, source, minimum prize, start-date range, theme chips, and "closing within 7 days". Sort by deadline, prize, registrations or start date. Filters are kept in the URL, so you can bookmark or share a view.
 - **Big tech**: hackathons run or sponsored by companies like Google, Meta, Microsoft, Amazon, NVIDIA, OpenAI and Anthropic get a company badge. Use the **Big tech** toggle for all of them, or the company chips for specific ones (e.g. `/?co=Meta`). Detection is name-based (`lib/companies.ts`) and also recognizes products, so a Gemini hackathon counts as Google's. Local chapters like Google Developer Groups or AWS student clubs don't count.
-- **Bookmarks & tracking**: star any hackathon, then move it through *interested → registered → building → submitted* on the **Saved** board (drag cards between columns or change their status). Export or import your list as JSON from Saved or **Settings**.
-- **Deadline reminders**: countdown badges on every card (green, amber under 7 days, red under 48h), a banner for saved hackathons closing within 72 hours, optional browser notifications under 24 hours, and a **+ Calendar** button that downloads an `.ics` event with a reminder the day before.
+- **Bookmarks & tracking**: star any hackathon, then move it through *interested → registered → building → submitted* on the **Saved** page. Export or import your list as JSON.
+- **Deadline reminders**: countdown badges on every card (amber under 7 days, red under 48h), a banner for saved hackathons closing within 72 hours, optional browser notifications under 24 hours, and a **+ Calendar** button that downloads an `.ics` event with a reminder the day before.
 
 - **Social**: the latest posts from r/hackathon and r/hackathons, sorted into *Announcements*, *Looking for team* and *Discussion*. Posts that name a listed hackathon are linked to it, and its card shows a 💬 count, which is handy for finding teammates.
 - **LinkedIn & Facebook**: neither offers a public way to read posts, so the Social page has buttons that open their own search. If you find a hackathon there, use **+ Add a hackathon from a link** on the Saved page to track it with countdowns and reminders.

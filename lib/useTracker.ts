@@ -135,8 +135,6 @@ export function useTracker() {
     if (changed) write(next);
   }, []);
 
-  const clear = useCallback(() => write({}), []);
-
   /** Merges an exported file. Returns how many entries were valid and imported. */
   const importData = useCallback((data: unknown) => {
     const valid = sanitizeImport(data);
@@ -144,5 +142,5 @@ export function useTracker() {
     return Object.keys(valid).length;
   }, []);
 
-  return { tracked, save, remove, setStatus, syncSnapshots, importData, clear };
+  return { tracked, save, remove, setStatus, syncSnapshots, importData };
 }

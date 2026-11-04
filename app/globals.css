@@ -1,68 +1,38 @@
 @import "tailwindcss";
 
+:root {
+  --background: #fafafa;
+  --foreground: #18181b;
+}
+
 @theme inline {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
-@theme {
-  --color-ink: #0b0b12;
-  --color-surface: #171720;
-  --color-raised: #1f1f2b;
-  --color-line: #262634;
-  --color-accent: #7655ff;
-  --color-accent-hi: #8a6dff;
-  --color-accent-lo: #b9a8ff;
-
-  --shadow-card: inset 0 1px 0 0 rgb(255 255 255 / 0.03), 0 1px 2px rgb(0 0 0 / 0.4);
-  --shadow-lift: 0 20px 40px -20px rgb(118 85 255 / 0.5), 0 4px 12px -4px rgb(0 0 0 / 0.5);
-  --shadow-glow: 0 0 0 1px rgb(118 85 255 / 0.25), 0 12px 32px -14px rgb(118 85 255 / 0.7);
-
-  --animate-rise: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  --animate-float: float 6s ease-in-out infinite;
-  --animate-pop: pop 0.32s cubic-bezier(0.3, 1.6, 0.5, 1);
-  --animate-twinkle: twinkle 2.8s ease-in-out infinite;
-
-  @keyframes rise {
-    from {
-      opacity: 0;
-      transform: translateY(12px);
-    }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #09090b;
+    --foreground: #f4f4f5;
   }
-  @keyframes float {
-    50% {
-      transform: translateY(-12px) rotate(-2deg);
-    }
-  }
-  @keyframes pop {
-    40% {
-      transform: scale(1.35);
-    }
-  }
-  @keyframes twinkle {
-    50% {
-      opacity: 0.2;
-      transform: scale(0.6);
-    }
-  }
-}
-
-html {
-  color-scheme: dark;
-  background: var(--color-ink);
 }
 
 body {
-  background: var(--color-ink);
-  color: #e4e4e7;
-  font-family: var(--font-sans);
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
-::selection {
-  background: rgb(118 85 255 / 0.4);
+@media (prefers-color-scheme: dark) {
+  input[type="date"] {
+    color-scheme: dark;
+  }
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid #6366f1;
   outline-offset: 2px;
 }
 
@@ -71,124 +41,4 @@ body {
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
-}
-
-/*
- * Sidebar sizing. Below lg it's an icon rail that opens over the page; from lg up it's
- * full width unless collapsed, and the page makes room for it. AppShell sets data-sidebar.
- */
-.shell {
-  --rail: 76px;
-  --wide: 248px;
-  --sb: var(--rail);
-  --main-pl: 0px;
-}
-@media (min-width: 768px) {
-  .shell {
-    --main-pl: var(--rail);
-  }
-  .shell[data-sidebar="expanded"] {
-    --sb: var(--wide);
-  }
-}
-@media (min-width: 1024px) {
-  .shell[data-sidebar="auto"] {
-    --sb: var(--wide);
-  }
-  .shell {
-    --main-pl: var(--sb);
-  }
-}
-
-/* sb-fade: labels that fade with the sidebar. sb-show: blocks shown only when it's wide. sb-dot: only when narrow. */
-.shell .sb-fade {
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.15s ease, visibility 0.15s;
-}
-.shell .sb-show {
-  display: none;
-}
-@media (min-width: 768px) {
-  .shell[data-sidebar="expanded"] .sb-fade {
-    opacity: 1;
-    visibility: visible;
-    transition-delay: 0.08s;
-  }
-  .shell[data-sidebar="expanded"] .sb-show {
-    display: block;
-  }
-  .shell[data-sidebar="expanded"] .sb-dot {
-    display: none;
-  }
-}
-@media (min-width: 1024px) {
-  .shell[data-sidebar="auto"] .sb-fade {
-    opacity: 1;
-    visibility: visible;
-    transition-delay: 0.08s;
-  }
-  .shell[data-sidebar="auto"] .sb-show {
-    display: block;
-  }
-  .shell[data-sidebar="auto"] .sb-dot {
-    display: none;
-  }
-}
-
-.sb-backdrop {
-  display: none;
-}
-@media (min-width: 768px) and (max-width: 1023.98px) {
-  .shell[data-sidebar="expanded"] .sb-backdrop {
-    display: block;
-  }
-}
-
-/* Native <dialog> modals: fade and scale in and out. */
-.modal {
-  margin: auto;
-  width: min(34rem, calc(100vw - 2rem));
-  max-height: calc(100dvh - 2rem);
-  opacity: 0;
-  transform: translateY(8px) scale(0.97);
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease,
-    overlay 0.2s allow-discrete,
-    display 0.2s allow-discrete;
-}
-.modal[open] {
-  opacity: 1;
-  transform: none;
-}
-.modal::backdrop {
-  background: rgb(5 5 10 / 0);
-  transition:
-    background 0.2s ease,
-    overlay 0.2s allow-discrete,
-    display 0.2s allow-discrete;
-}
-.modal[open]::backdrop {
-  background: rgb(5 5 10 / 0.72);
-}
-@starting-style {
-  .modal[open] {
-    opacity: 0;
-    transform: translateY(8px) scale(0.97);
-  }
-  .modal[open]::backdrop {
-    background: rgb(5 5 10 / 0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  ::before,
-  ::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
 }
