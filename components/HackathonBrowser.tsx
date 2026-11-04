@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Filters } from "./Filters";
 import { HackathonCard } from "./HackathonCard";
+import { StatCards, type Stat } from "./StatCards";
+import { BoltIcon, BuildingIcon, FlameIcon, InboxIcon, TrophyIcon } from "./icons";
 import {
   applyFilters,
   companyCounts,
@@ -14,6 +16,7 @@ import {
   type FilterState,
 } from "@/lib/filters";
 import { DAY, useNow } from "@/lib/time";
+import { btnGhost } from "@/lib/ui";
 import { useTracker } from "@/lib/useTracker";
 import type { HackathonsResponse } from "@/lib/types";
 
@@ -22,6 +25,7 @@ const PAGE = 30;
 function compactUsd(n: number): string {
   return `$${new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(n)}`;
 }
+const count = (n: number) => Math.round(n).toLocaleString();
 
 export function HackathonBrowser({ data, postCounts }: { data: HackathonsResponse; postCounts: Record<string, number> }) {
   const params = useSearchParams();
@@ -42,10 +46,12 @@ export function HackathonBrowser({ data, postCounts }: { data: HackathonsRespons
   const at = now ?? Date.parse(data.fetchedAt);
   const themes = useMemo(() => topThemes(data.hackathons), [data.hackathons]);
   const companies = useMemo(() => companyCounts(data.hackathons), [data.hackathons]);
-  const results = useMemo(() => applyFilters(data.hackathons, filters, at), [data.hackathons, filters, at]);
+  // Typing stays responsive: the grid filters against a deferred copy and catches up a moment later.
+  const deferred = useDeferredValue(filters);
+  const results = useMemo(() => applyFilters(data.hackathons, deferred, at), [data.hackathons, deferred, at]);
   const myanmar = useMemo(() => data.hackathons.filter((h) => h.myanmar), [data.hackathons]);
 
-  const stats = useMemo(() => {
+  const totals = useMemo(() => {
     const list = data.hackathons;
     return {
       closingSoon: list.filter((h) => {
@@ -62,56 +68,54 @@ export function HackathonBrowser({ data, postCounts }: { data: HackathonsRespons
     setShown(PAGE);
   };
 
-  const tiles: { label: string; value: string; active: boolean; onClick: () => void }[] = [
-    { label: "Open now", value: data.hackathons.length.toLocaleString(), active: false, onClick: () => update(DEFAULT_FILTERS) },
+  const stats: Stat[] = [
+    {
+      label: "Open now",
+      value: data.hackathons.length,
+      format: count,
+      icon: <BoltIcon size={18} />,
+      tone: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400",
+      active: false,
+      hint: "Show everything",
+      onClick: () => update(DEFAULT_FILTERS),
+    },
     {
       label: "Closing this week",
-      value: stats.closingSoon.toLocaleString(),
+      value: totals.closingSoon,
+      format: count,
+      icon: <FlameIcon size={18} />,
+      tone: "bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400",
       active: filters.closingSoon,
+      hint: "Only show hackathons closing within 7 days",
       onClick: () => update({ ...filters, closingSoon: !filters.closingSoon }),
     },
     {
       label: "Big tech",
-      value: stats.bigTech.toLocaleString(),
+      value: totals.bigTech,
+      format: count,
+      icon: <BuildingIcon size={18} />,
+      tone: "bg-sky-50 text-sky-600 dark:bg-sky-950/60 dark:text-sky-400",
       active: filters.bigTech,
+      hint: "Only show hackathons run or sponsored by big tech",
       onClick: () => update({ ...filters, bigTech: !filters.bigTech }),
     },
     {
       label: "In prizes",
-      value: compactUsd(stats.prizes),
+      value: totals.prizes,
+      format: compactUsd,
+      icon: <TrophyIcon size={18} />,
+      tone: "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400",
       active: filters.sort === "prize",
+      hint: "Sort by biggest prize",
       onClick: () => update({ ...filters, sort: filters.sort === "prize" ? "deadline" : "prize" }),
     },
   ];
 
   return (
     <div className="space-y-5">
-      <header className="space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-white">Find your next hackathon</h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Live from Devpost, MLH, Cerebral Valley, lablab.ai, Luma and NASA Space Apps, plus hand-picked local events, with Myanmar first. Re-scraped every day.
-          </p>
-        </div>
-        <div className="grid grid-cols-4 gap-2 sm:gap-3">
-          {tiles.map((t) => (
-            <button
-              key={t.label}
-              onClick={t.onClick}
-              aria-pressed={t.active}
-              className={`rounded-xl border px-2.5 py-2 text-left transition sm:px-4 sm:py-3 ${
-                t.active
-                  ? "border-indigo-300 bg-indigo-50 dark:border-indigo-800 dark:bg-indigo-950/50"
-                  : "border-zinc-200/80 bg-white hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
-              }`}
-            >
-              <span className="block text-lg font-semibold tabular-nums tracking-tight text-zinc-900 sm:text-2xl dark:text-white">
-                {t.value}
-              </span>
-              <span className="block text-[11px] leading-tight text-zinc-500 sm:text-xs dark:text-zinc-400">{t.label}</span>
-            </button>
-          ))}
-        </div>
+      <header>
+        <h1 className="sr-only">Find your next hackathon</h1>
+        <StatCards stats={stats} />
       </header>
 
       {!filters.myanmar && (
@@ -149,30 +153,28 @@ export function HackathonBrowser({ data, postCounts }: { data: HackathonsRespons
         </p>
       )}
 
-      <div className="flex items-baseline justify-between gap-4">
-        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          {results.length === data.hackathons.length
-            ? `${results.length} hackathons`
-            : `${results.length} of ${data.hackathons.length} hackathons`}
-        </p>
-        <p className="text-xs text-zinc-400">
-          Updated {new Date(data.fetchedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-        </p>
-      </div>
+      <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        {results.length === data.hackathons.length
+          ? `${results.length} hackathons`
+          : `${results.length} of ${data.hackathons.length} hackathons`}
+      </p>
 
       {results.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 px-6 py-16 text-center dark:border-zinc-700">
-          <p className="font-medium text-zinc-700 dark:text-zinc-200">No hackathons match these filters</p>
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-400 dark:bg-zinc-800">
+            <InboxIcon size={22} />
+          </div>
+          <p className="mt-4 font-medium text-zinc-700 dark:text-zinc-200">No hackathons match these filters</p>
           <p className="mt-1 text-sm text-zinc-500">Try widening the dates or removing a theme.</p>
           <button
             onClick={() => update(DEFAULT_FILTERS)}
-            className="mt-4 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+            className="mt-4 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 active:scale-[0.98] dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
           >
             Clear filters
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className={`grid grid-cols-1 gap-4 transition-opacity sm:grid-cols-2 xl:grid-cols-3 ${deferred !== filters ? "opacity-60" : ""}`}>
           {results.slice(0, shown).map((h) => (
             <HackathonCard
               key={h.id}
@@ -190,10 +192,7 @@ export function HackathonBrowser({ data, postCounts }: { data: HackathonsRespons
 
       {shown < results.length && (
         <div className="pt-2 text-center">
-          <button
-            onClick={() => setShown((n) => n + PAGE)}
-            className="rounded-xl border border-zinc-200 bg-white px-5 py-2.5 text-sm font-medium shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800"
-          >
+          <button onClick={() => setShown((n) => n + PAGE)} className={`${btnGhost} h-10 rounded-xl px-5 shadow-sm`}>
             Show more <span className="text-zinc-400">· {results.length - shown} left</span>
           </button>
         </div>
@@ -214,14 +213,12 @@ function MyanmarSection({ count, onShowAll, children }: { count: number; onShowA
             <span aria-hidden>🇲🇲</span> Hackathons in Myanmar
           </h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            {count > 0
-              ? `${count} upcoming, checked every day`
-              : "None listed online right now. Checked every day."}
+            {count > 0 ? `${count} upcoming, checked every day` : "None listed online right now. Checked every day."}
           </p>
         </div>
         {count > 3 && (
-          <button onClick={onShowAll} className="text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400">
-            See all {count} →
+          <button onClick={onShowAll} className="group text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400">
+            See all {count} <span className="inline-block transition-transform group-hover:translate-x-0.5">→</span>
           </button>
         )}
       </div>

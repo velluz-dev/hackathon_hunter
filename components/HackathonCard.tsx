@@ -1,36 +1,15 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
+import { CalendarButton, organizer, SaveButton, sourceLabel, Thumb } from "./cardParts";
 import { Countdown } from "./Countdown";
-import { BuildingIcon, CalendarIcon, CalendarPlusIcon, ChatIcon, GlobeIcon, PinIcon, StarIcon, TrophyIcon, UsersIcon } from "./icons";
-import { downloadIcs } from "@/lib/ics";
+import { BuildingIcon, CalendarIcon, ChatIcon, GlobeIcon, PinIcon, TrophyIcon, UsersIcon } from "./icons";
 import { formatDateRange } from "@/lib/time";
 import { STATUSES, type Hackathon, type TrackedItem, type TrackStatus } from "@/lib/types";
 
-const SOURCE_NAMES: Partial<Record<Hackathon["source"], string>> = {
-  devpost: "Devpost",
-  mlh: "MLH",
-  cerebralvalley: "Cerebral Valley",
-  lablab: "lablab.ai",
-  luma: "Luma",
-  spaceapps: "NASA Space Apps",
-  curated: "Local pick",
-};
-
-// Sources whose organizer field is a readable list of names worth showing.
-const SHOWS_ORGANIZER = new Set<Hackathon["source"]>(["devpost", "cerebralvalley", "luma", "curated"]);
-
-function sourceLabel(h: Hackathon): string {
-  const named = SOURCE_NAMES[h.source];
-  if (named) return named;
-  if (/linkedin\.com/i.test(h.url)) return "From LinkedIn";
-  if (/facebook\.com|fb\.(com|me)/i.test(h.url)) return "From Facebook";
-  if (/reddit\.com/i.test(h.url)) return "From Reddit";
-  return "Added by you";
-}
-
 function formatPrize(n: number): string {
-  return n >= 1000 ? `$${(n / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}k` : `$${n}`;
+  return `$${new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(n)}`;
 }
 
 const MAX_THEMES = 3;
@@ -47,54 +26,36 @@ interface Props {
   onStatus: (id: string, s: TrackStatus) => void;
 }
 
-export function HackathonCard({ h, tracked, now, postCount, compact, onSave, onRemove, onStatus }: Props) {
+export const HackathonCard = memo(function HackathonCard({ h, tracked, now, postCount, compact, onSave, onRemove, onStatus }: Props) {
   const location = h.mode === "hybrid" ? `Hybrid · ${h.location}` : h.location;
   const extraThemes = h.themes.length - MAX_THEMES;
   const companies = h.companies ?? []; // snapshots saved before company tagging have none
-  const showOrganizer = h.organizer && SHOWS_ORGANIZER.has(h.source) && h.organizer !== sourceLabel(h);
+  const org = organizer(h);
 
   return (
-    <article className="group flex min-w-0 flex-col rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition hover:border-zinc-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700">
+    <article className="group relative flex h-full min-w-0 flex-col rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-lg hover:shadow-zinc-900/[0.06] dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700 dark:hover:shadow-black/40">
       <div className={`flex gap-3 ${compact ? "p-3" : "p-4"}`}>
-        {h.image ? (
-          // eslint-disable-next-line @next/next/no-img-element -- remote thumbnails from many hosts
-          <img
-            src={h.image}
-            alt=""
-            loading="lazy"
-            className={`${compact ? "h-10 w-10" : "h-12 w-12"} shrink-0 rounded-xl bg-zinc-100 object-cover ring-1 ring-zinc-900/5 dark:bg-zinc-800 dark:ring-white/10`}
-          />
-        ) : (
-          <div
-            className={`${compact ? "h-10 w-10" : "h-12 w-12"} flex shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 text-lg font-bold text-white`}
-          >
-            {h.title[0]?.toUpperCase()}
-          </div>
-        )}
+        <Thumb h={h} compact={compact} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[11px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500" title={h.organizer ?? undefined}>
             {sourceLabel(h)}
-            {showOrganizer && <span className="normal-case tracking-normal"> · {h.organizer}</span>}
+            {org && <span className="normal-case tracking-normal"> · {org}</span>}
           </p>
           <h3 className={`mt-0.5 line-clamp-2 font-semibold leading-snug text-zinc-900 dark:text-zinc-50 ${compact ? "text-sm" : "text-[15px]"}`}>
-            <a href={h.url} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 dark:hover:text-indigo-400">
+            {/* The link covers the whole card; buttons and the status menu sit above it. */}
+            <a
+              href={h.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors after:absolute after:inset-0 after:rounded-2xl group-hover:text-indigo-600 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-indigo-500 dark:group-hover:text-indigo-400"
+            >
               {h.title}
             </a>
           </h3>
         </div>
-        <button
-          onClick={() => (tracked ? onRemove(h.id) : onSave(h))}
-          aria-label={tracked ? `Remove ${h.title} from saved` : `Save ${h.title}`}
-          aria-pressed={!!tracked}
-          title={tracked ? "Remove from saved" : "Save"}
-          className={`-mr-1 -mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition ${
-            tracked
-              ? "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/50"
-              : "text-zinc-300 hover:bg-zinc-100 hover:text-amber-500 dark:text-zinc-600 dark:hover:bg-zinc-800"
-          }`}
-        >
-          <StarIcon size={18} filled={!!tracked} />
-        </button>
+        <div className="-mr-1 -mt-1">
+          <SaveButton h={h} saved={!!tracked} onSave={onSave} onRemove={onRemove} />
+        </div>
       </div>
 
       <div className={`space-y-1 text-sm text-zinc-600 dark:text-zinc-400 ${compact ? "px-3" : "px-4"}`}>
@@ -153,8 +114,8 @@ export function HackathonCard({ h, tracked, now, postCount, compact, onSave, onR
       {/* Pushes the footer to the bottom so footers line up across a row. */}
       <div className={`flex-1 ${compact ? "min-h-3" : "min-h-4"}`} />
       <div
-        className={`flex items-center gap-3 border-t border-zinc-100 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400 ${
-          compact ? "mx-3 py-2" : "mx-4 py-2.5"
+        className={`flex min-h-11 items-center gap-3 border-t border-zinc-100 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400 ${
+          compact ? "mx-3 py-2" : "mx-4 py-2"
         }`}
       >
         {!compact && h.participants !== null && (
@@ -166,7 +127,7 @@ export function HackathonCard({ h, tracked, now, postCount, compact, onSave, onR
         {!!postCount && (
           <Link
             href={`/social?h=${encodeURIComponent(h.id)}`}
-            className="flex items-center gap-1 hover:text-indigo-600 dark:hover:text-indigo-400"
+            className="relative z-10 flex items-center gap-1 hover:text-indigo-600 dark:hover:text-indigo-400"
             title={`${postCount} Reddit post${postCount > 1 ? "s" : ""} about this hackathon`}
           >
             <ChatIcon size={13} />
@@ -174,21 +135,12 @@ export function HackathonCard({ h, tracked, now, postCount, compact, onSave, onR
           </Link>
         )}
         <div className="ml-auto flex items-center gap-1">
-          {h.deadline && (
-            <button
-              onClick={() => downloadIcs(h)}
-              className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-              title="Add deadline to calendar"
-              aria-label={`Add ${h.title} deadline to calendar`}
-            >
-              <CalendarPlusIcon size={15} />
-            </button>
-          )}
+          <CalendarButton h={h} />
           {tracked && (
             <select
               value={tracked.status}
               onChange={(e) => onStatus(h.id, e.target.value as TrackStatus)}
-              className="h-7 rounded-md border border-zinc-200 bg-white pl-2 pr-1 text-xs capitalize text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+              className="relative z-10 h-7 rounded-md border border-zinc-200 bg-white pl-2 pr-1 text-xs capitalize text-zinc-700 transition hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-zinc-600"
               aria-label={`Status for ${h.title}`}
             >
               {STATUSES.map((s) => (
@@ -202,4 +154,4 @@ export function HackathonCard({ h, tracked, now, postCount, compact, onSave, onR
       </div>
     </article>
   );
-}
+});
