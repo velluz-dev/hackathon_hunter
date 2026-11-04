@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { HackathonBrowser } from "@/components/HackathonBrowser";
 import { DeadlineBanner } from "@/components/DeadlineBanner";
+import { BrowseSkeleton } from "@/components/Skeletons";
 import { getHackathons } from "@/lib/aggregate";
 import { getSocial } from "@/lib/social";
 
@@ -16,7 +17,7 @@ export default async function Home() {
   return (
     <div className="space-y-5">
       <DeadlineBanner />
-      <Suspense>
+      <Suspense fallback={<BrowseSkeleton />}>
         <HackathonBrowser data={data} postCounts={postCounts} />
       </Suspense>
     </div>
