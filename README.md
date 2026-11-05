@@ -1,7 +1,7 @@
 # Hackathon Hunter
 
 Find upcoming hackathons, track the ones you care about, and don't miss deadlines.
-Listings come live from **Devpost**, **MLH**, **Cerebral Valley**, **lablab.ai**, **Luma** and **NASA Space Apps**, with hackathons in **Myanmar** pinned at the top. They're re-scraped every day and refreshed every 30 minutes while people visit.
+Listings come live from **Devpost**, **MLH**, **Cerebral Valley**, **lablab.ai**, **Luma**, **NASA Space Apps** and **Google Developer Groups**, with hackathons and tech events in **Myanmar** pinned at the top. They're re-scraped every day and refreshed every 30 minutes while people visit.
 
 ## Run it
 
@@ -32,7 +32,8 @@ Bookmarks are stored in your browser's `localStorage`. They aren't synced betwee
 | MLH     | Event data embedded in the season page (`mlh.com/seasons/<year>/events`) | Event start time |
 | Cerebral Valley | Public API behind `cerebralvalley.ai/events` (`api.cerebralvalley.ai/v1/public/event/pull`), paged through for every upcoming event typed as a hackathon. Hosts become the organizer, so the sponsoring company (Google DeepMind, Meta, OpenAI, Anthropic…) is named; prizes are read from the summary ("$1 million in prizes") | Event start time |
 | lablab.ai | Event list embedded in `lablab.ai/ai-hackathons` (sponsor-run AI hackathons, e.g. AMD) | Event start time |
-| Luma    | Public discover search for "hackathon". Results favor events near wherever the app runs, so Myanmar gets its own searches ("Myanmar", "Yangon", "Mandalay"…), keeping events Luma places in Myanmar | Event start time |
+| Luma    | Public discover search for "hackathon". Results favor events near wherever the app runs, so Myanmar gets its own searches ("Myanmar", "Yangon", "Cursor Myanmar"…) plus the Myanmar community calendars (e.g. Cursor & Grok Myanmar). Every Myanmar event is kept, meetups and workshops included, judged by venue country, the Asia/Yangon time zone or a Myanmar-based calendar | Event start time |
+| Google Developer Groups | Public JSON on `gdg.community.dev`: upcoming events of every GDG chapter in Myanmar (DevFest Yangon, I/O Extended…) | Event start time |
 | NASA Space Apps | Public GraphQL API behind `spaceappschallenge.org`. Lists each upcoming challenge once (worldwide, with local event and registration counts) plus its local events in Myanmar | Event start time |
 | Local picks | Hand-written list in `lib/sources/curated.ts` for Myanmar events no site lists (e.g. the YTU Science Festival). Dates can be left empty ("Dates TBA"); each entry hides itself after its `hideAfter` date | Event start time |
 

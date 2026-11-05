@@ -165,6 +165,7 @@ export function Filters({ value: f, onChange, themes, companies }: Props) {
                   <option value="lablab">lablab.ai</option>
                   <option value="luma">Luma</option>
                   <option value="spaceapps">NASA Space Apps</option>
+                  <option value="gdg">Google Developer Groups</option>
                   <option value="curated">Local picks</option>
                 </select>
               </div>

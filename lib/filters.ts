@@ -41,7 +41,7 @@ export const DEFAULT_FILTERS: FilterState = {
 };
 
 const MODES = ["all", "online", "in-person", "hybrid"];
-const SOURCES = ["all", "devpost", "mlh", "cerebralvalley", "lablab", "luma", "spaceapps", "curated"];
+const SOURCES = ["all", "devpost", "mlh", "cerebralvalley", "lablab", "luma", "spaceapps", "gdg", "curated"];
 const SORTS = ["deadline", "prize", "participants", "newest"];
 const STATUSES = ["any", "open", "started", "tba"];
 

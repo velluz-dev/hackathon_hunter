@@ -210,7 +210,7 @@ function MyanmarSection({ count, onShowAll, children }: { count: number; onShowA
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="font-semibold text-zinc-900 dark:text-white">
-            <span aria-hidden>🇲🇲</span> Hackathons in Myanmar
+            <span aria-hidden>🇲🇲</span> Hackathons &amp; tech events in Myanmar
           </h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
             {count > 0 ? `${count} upcoming, checked every day` : "None listed online right now. Checked every day."}

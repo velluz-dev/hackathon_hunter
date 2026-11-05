@@ -10,8 +10,9 @@ const SOURCES = [
   ["MLH", "Major League Hacking's season events"],
   ["Cerebral Valley", "AI hackathons, often sponsored by big tech"],
   ["lablab.ai", "Sponsor-run AI hackathons"],
-  ["Luma", "Public hackathon events, with extra searches for Myanmar"],
+  ["Luma", "Public hackathon events, plus every Myanmar event (Cursor, Grok and other community meetups)"],
   ["NASA Space Apps", "Each challenge plus its local events in Myanmar"],
+  ["Google Developer Groups", "DevFest, I/O Extended and other GDG events in Myanmar"],
   ["Local picks", "Hand-picked Myanmar events that no site lists"],
 ];
 

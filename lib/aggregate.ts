@@ -7,6 +7,7 @@ import { fetchDevpost } from "./sources/devpost";
 import { fetchLablab } from "./sources/lablab";
 import { fetchLuma, fetchLumaMyanmar } from "./sources/luma";
 import { fetchMlh } from "./sources/mlh";
+import { fetchGdgMyanmar } from "./sources/gdg";
 import { fetchSpaceApps } from "./sources/spaceapps";
 import type { Hackathon, HackathonsResponse, RawHackathon, Source } from "./types";
 
@@ -20,6 +21,7 @@ const SOURCES: [Source, () => Promise<RawHackathon[]>][] = [
   ["luma", fetchLuma],
   ["luma", fetchLumaMyanmar],
   ["spaceapps", fetchSpaceApps],
+  ["gdg", fetchGdgMyanmar],
   // Last, so a scraped listing of the same event (with real dates) wins over the hand-written one.
   ["curated", fetchCurated],
 ];

@@ -60,7 +60,7 @@ function sanitizeImport(data: unknown): Tracked {
       savedAt: isoOrNull(savedAt) ?? new Date().toISOString(),
       snapshot: {
         id,
-        source: (["devpost", "mlh", "cerebralvalley", "lablab", "luma", "spaceapps", "curated", "manual"] as Source[]).includes(h.source as Source)
+        source: (["devpost", "mlh", "cerebralvalley", "lablab", "luma", "spaceapps", "gdg", "curated", "manual"] as Source[]).includes(h.source as Source)
           ? (h.source as Source)
           : "manual",
         title,
