@@ -1,5 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
+import { alertNewMyanmarEvents, type AlertResult } from "@/lib/alerts";
+import type { HackathonsResponse } from "@/lib/types";
 
 // Vercel Cron calls this once a day (see vercel.json), so listings are re-scraped even when
 // nobody has visited. Vercel sends the CRON_SECRET env var as a bearer token; anyone else
@@ -20,8 +22,11 @@ export async function GET(req: Request) {
   revalidatePath("/", "layout");
   const origin = new URL(req.url).origin;
   const hackathons = await fetch(`${origin}/api/hackathons`, { cache: "no-store" })
-    .then((r) => r.json() as Promise<{ hackathons: unknown[]; errors: unknown[]; fetchedAt: string }>)
+    .then((r) => r.json() as Promise<HackathonsResponse>)
     .catch(() => null);
+  const alerts: AlertResult = hackathons
+    ? await alertNewMyanmarEvents(hackathons.hackathons).catch((e) => ({ sent: [], skipped: String(e) }))
+    : { sent: [], skipped: "listings failed to load" };
   const pages = await Promise.all(
     PAGES.map((p) =>
       fetch(`${origin}${p}`, { cache: "no-store" })
@@ -38,5 +43,6 @@ export async function GET(req: Request) {
       fetchedAt: hackathons.fetchedAt,
     },
     pages: Object.fromEntries(pages),
+    alerts,
   });
 }

@@ -43,6 +43,12 @@ Reddit rate-limits hard, so it's fetched in a single request and cached for 30 m
 
 **Refresh schedule:** pages are re-scraped at most every 30 minutes when someone visits. On Vercel, a daily cron job (`vercel.json`, 00:00 UTC) also calls `GET /api/cron/refresh`, which clears the cache and re-scrapes everything even if nobody has visited. That route needs the `CRON_SECRET` environment variable; Vercel sends it automatically, and any other caller gets a 401.
 
+**Telegram alerts:** the same daily job sends a Telegram message for every new Myanmar event on Luma (6:30 AM Yangon time), and keeps a pinned message in the chat listing the upcoming ones. The pinned list is how it remembers what it already announced, so leave it pinned. To turn it on:
+
+1. Create a bot with [@BotFather](https://t.me/BotFather) and send your new bot any message.
+2. Find your chat id at `https://api.telegram.org/bot<token>/getUpdates` (`message.chat.id`).
+3. In Vercel, add `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` and `CRON_SECRET` (any long random string), then redeploy.
+
 `GET /api/hackathons` returns the merged list; `GET /api/social` returns the classified Reddit posts. If one source fails, the other still loads and the UI says which one is down.
 Duplicates (same title on both sites) keep the Devpost version because it carries prize and registration data.
 
