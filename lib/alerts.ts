@@ -18,7 +18,7 @@ interface TgMessage {
 
 const LUMA_LINK = /https:\/\/lu\.ma\/[^\s<]+/g;
 
-async function telegram<T>(token: string, method: string, body: object): Promise<T> {
+export async function telegram<T>(token: string, method: string, body: object): Promise<T> {
   const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -30,9 +30,9 @@ async function telegram<T>(token: string, method: string, body: object): Promise
   return data.result;
 }
 
-const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+export const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-function when(h: Hackathon): string {
+export function when(h: Hackathon): string {
   if (!h.startDate) return "Dates TBA";
   return new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Yangon",

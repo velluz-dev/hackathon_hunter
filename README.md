@@ -49,6 +49,8 @@ Reddit rate-limits hard, so it's fetched in a single request and cached for 30 m
 2. Find your chat id at `https://api.telegram.org/bot<token>/getUpdates` (`message.chat.id`).
 3. In Vercel, add `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` and `CRON_SECRET` (any long random string), then redeploy.
 
+The bot also answers commands: send it `/scrape` to scrape right away and get every Myanmar event (`/scrape luma` for only Luma), or `/help`. For that, add `TELEGRAM_WEBHOOK_SECRET` (any random string) to Vercel and point the bot at the app once: `https://api.telegram.org/bot<token>/setWebhook?url=https://<your-domain>/api/telegram&secret_token=<secret>`.
+
 `GET /api/hackathons` returns the merged list; `GET /api/social` returns the classified Reddit posts. If one source fails, the other still loads and the UI says which one is down.
 Duplicates (same title on both sites) keep the Devpost version because it carries prize and registration data.
 
