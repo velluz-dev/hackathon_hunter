@@ -10,6 +10,7 @@ export type Source =
   | "devfolio"
   | "dorahacks"
   | "hackclub"
+  | "facebook"
   | "luma"
   | "spaceapps"
   | "gdg"

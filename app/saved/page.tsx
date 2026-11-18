@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AddFromLink } from "@/components/AddFromLink";
+import { AddFromLink, type AddPrefill } from "@/components/AddFromLink";
 import { ExportButton, ImportButton } from "@/components/DataActions";
 import { DeadlineBanner } from "@/components/DeadlineBanner";
 import { EditTracked, TrackedNotes } from "@/components/EditTracked";
@@ -15,7 +15,7 @@ import { ArchiveIcon, InboxIcon, PlusIcon, StarIcon } from "@/components/icons";
 import { DAY, useNow } from "@/lib/time";
 import { btnGhost, btnPrimary } from "@/lib/ui";
 import { useTracker } from "@/lib/useTracker";
-import { STATUSES, type TrackedItem, type TrackStatus } from "@/lib/types";
+import { STATUSES, type Mode, type TrackedItem, type TrackStatus } from "@/lib/types";
 
 const STATUS_META: Record<TrackStatus, { dot: string; ring: string; hint: string }> = {
   interested: { dot: "bg-sky-500", ring: "ring-sky-400", hint: "Worth a look" },
@@ -34,10 +34,39 @@ function isPast(t: TrackedItem, now: number): boolean {
   return !!h.deadline && Date.parse(h.deadline) < now - 7 * DAY;
 }
 
+/**
+ * What another app shared here: the phone's share sheet sends ?title=&text=&url=, and the
+ * bookmarklet and the Telegram bot send #add?name=&url=&text=&deadline=&label=&start=&end=&location=&mode=
+ * (in the #fragment, so long posts never reach the server).
+ */
+function prefillFromUrl(): AddPrefill | null {
+  const hash = window.location.hash;
+  const p = new URLSearchParams(hash.startsWith("#add?") ? hash.slice(5) : window.location.search);
+  if (!["add", "text", "url", "title", "name"].some((k) => p.has(k))) return null;
+  const get = (k: string) => p.get(k)?.slice(0, 5000) || undefined;
+  // A shared page's title is often just "Facebook"; it's only worth reading along with the text.
+  const sharedTitle = get("title");
+  const text = [sharedTitle && !/^(facebook|linkedin|instagram|x|twitter)$/i.test(sharedTitle) ? sharedTitle : "", get("text") ?? ""]
+    .filter(Boolean)
+    .join("\n");
+  return {
+    url: get("url"),
+    title: get("name"),
+    text,
+    deadline: get("deadline"),
+    deadlineLabel: get("label"),
+    start: get("start"),
+    end: get("end"),
+    location: get("location"),
+    mode: get("mode") as Mode | undefined,
+  };
+}
+
 export default function SavedPage() {
   const { tracked, save, remove, setStatus, update } = useTracker();
   const now = useNow();
   const [adding, setAdding] = useState(false);
+  const [prefill, setPrefill] = useState<{ key: number; value?: AddPrefill }>({ key: 0 });
   const [editing, setEditing] = useState<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
   const [over, setOver] = useState<TrackStatus | null>(null);
@@ -58,10 +87,23 @@ export default function SavedPage() {
     { label: "Wins & finals", value: all.filter((t) => t.result === "won" || t.result === "finalist").length },
   ];
 
-  // The Social page and Myanmar section link here with #add to open the form directly.
+  // The Social page and Myanmar section link here with #add to open the form directly; shares
+  // and the bookmarklet arrive with the post in the query string.
   useEffect(() => {
-    if (window.location.hash === "#add") setAdding(true);
+    const shared = prefillFromUrl();
+    if (shared) {
+      setPrefill({ key: Date.now(), value: shared });
+      setAdding(true);
+      window.history.replaceState(null, "", window.location.pathname);
+    } else if (window.location.hash === "#add") {
+      setAdding(true);
+    }
   }, []);
+
+  const openAdd = () => {
+    setPrefill({ key: Date.now() });
+    setAdding(true);
+  };
 
   const drop = (status: TrackStatus, e: React.DragEvent) => {
     e.preventDefault();
@@ -87,7 +129,7 @@ export default function SavedPage() {
           <SyncButton />
           <ExportButton />
           <ImportButton />
-          <button onClick={() => setAdding(true)} className={btnPrimary}>
+          <button onClick={openAdd} className={btnPrimary}>
             <PlusIcon size={16} />
             Add from link
           </button>
@@ -98,9 +140,17 @@ export default function SavedPage() {
         open={adding}
         onClose={() => setAdding(false)}
         title="Add a hackathon from a link"
-        description="Found one on LinkedIn, Facebook or anywhere else? Save it here to get the same countdown and reminders."
+        description="Found one on Facebook, LinkedIn or anywhere else? Paste the post and save it here to get the same countdown and reminders."
       >
-        <AddFromLink onAdd={(h) => save(h)} onClose={() => setAdding(false)} />
+        <AddFromLink
+          key={prefill.key}
+          initial={prefill.value}
+          onAdd={(h, notes) => {
+            save(h);
+            if (notes) update(h.id, { notes });
+          }}
+          onClose={() => setAdding(false)}
+        />
       </Modal>
 
       <Modal
@@ -152,7 +202,7 @@ export default function SavedPage() {
             >
               Browse hackathons
             </Link>
-            <button onClick={() => setAdding(true)} className={btnGhost}>
+            <button onClick={openAdd} className={btnGhost}>
               Add from link
             </button>
           </div>

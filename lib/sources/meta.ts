@@ -9,6 +9,7 @@ export const SOURCE_INFO: Record<Source, { name: string; about: string }> = {
   devfolio: { name: "Devfolio", about: "Hackathons across India and Asia, with application deadlines and sponsors" },
   dorahacks: { name: "DoraHacks", about: "Web3, AI and frontier-tech hackathons with prize pools" },
   hackclub: { name: "Hack Club", about: "High school hackathons around the world" },
+  facebook: { name: "Facebook", about: "Hackathon posts from the Facebook pages you follow, read through feed links (rss.app, FetchRSS)" },
   luma: { name: "Luma", about: "Public hackathon events, plus every Myanmar event (Cursor, Grok and other community meetups)" },
   spaceapps: { name: "NASA Space Apps", about: "Each challenge plus its local events in Myanmar" },
   gdg: { name: "Google Developer Groups", about: "DevFest, I/O Extended and other GDG events in Myanmar" },

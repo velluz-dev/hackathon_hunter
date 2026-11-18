@@ -108,8 +108,13 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
     q: "Why is a Myanmar hackathon I know about missing?",
     a: (
       <p>
-        Most Myanmar hackathons are only announced on Facebook, which can&apos;t be scraped. Find the post, then use{" "}
-        <Link href="/saved#add" className={link}>Add from link</Link> on the Saved page to track it with the same countdown and reminders.
+        Many Myanmar hackathons are only announced on Facebook, and Facebook doesn&apos;t let apps read posts (logging in with a bot breaks
+        its rules and gets accounts disabled). There are two ways around that, both in{" "}
+        <Link href="/settings#facebook" className={link}>Settings → Add hackathons from Facebook</Link>. Follow pages automatically by giving
+        the app a feed link for each page (made with rss.app or FetchRSS): their hackathon posts appear in the Myanmar section and in your
+        Telegram alerts. Or add a single post: paste its text into <Link href="/saved#add" className={link}>Add from link</Link>, share it
+        to the installed app on Android, use the bookmark button on a computer, or forward it to the Telegram bot. The name, deadline,
+        dates and place are read from the text (English or Burmese), so check them before saving.
       </p>
     ),
   },

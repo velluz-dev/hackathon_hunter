@@ -19,6 +19,13 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/pwa-icon/512", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/pwa-icon/maskable", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
+    // Lets the installed app appear in the phone's share sheet: sharing a Facebook post to it
+    // opens Saved with the post filled into "Add from link".
+    share_target: {
+      action: "/saved",
+      method: "GET",
+      params: { title: "title", text: "text", url: "url" },
+    },
     shortcuts: [
       { name: "Myanmar events", short_name: "Myanmar", url: "/?mm=1" },
       { name: "Closing this week", short_name: "Closing", url: "/?closing=1" },

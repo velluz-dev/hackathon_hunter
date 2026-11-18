@@ -4,7 +4,7 @@ import type { Hackathon } from "./types";
 // Plain functions (not client code), so server pages and client cards can both use them.
 
 // Sources whose organizer field is a readable list of names worth showing.
-const SHOWS_ORGANIZER = new Set<Hackathon["source"]>(["devpost", "cerebralvalley", "luma", "gdg", "curated", "dorahacks"]);
+const SHOWS_ORGANIZER = new Set<Hackathon["source"]>(["devpost", "cerebralvalley", "luma", "gdg", "curated", "dorahacks", "facebook"]);
 
 export function sourceLabel(h: Pick<Hackathon, "source" | "url">): string {
   if (h.source !== "manual") return sourceName(h.source);

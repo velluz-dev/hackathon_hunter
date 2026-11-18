@@ -6,6 +6,7 @@ import { fetchCurated } from "./sources/curated";
 import { fetchDevfolio } from "./sources/devfolio";
 import { fetchDevpost } from "./sources/devpost";
 import { fetchDoraHacks } from "./sources/dorahacks";
+import { fetchFacebook } from "./sources/facebook";
 import { fetchHackClub } from "./sources/hackclub";
 import { fetchLablab } from "./sources/lablab";
 import { fetchLuma, fetchLumaMyanmar } from "./sources/luma";
@@ -28,6 +29,8 @@ const SOURCES: [Source, () => Promise<RawHackathon[]>][] = [
   ["luma", fetchLumaMyanmar],
   ["spaceapps", fetchSpaceApps],
   ["gdg", fetchGdgMyanmar],
+  // Read from posts written for people, so its dates are a best guess: scraped listings win.
+  ["facebook", fetchFacebook],
   // Last, so a scraped listing of the same event (with real dates) wins over the hand-written one.
   ["curated", fetchCurated],
 ];

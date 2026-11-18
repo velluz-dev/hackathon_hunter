@@ -274,16 +274,19 @@ function MyanmarSection({ count, onShowAll, children }: { count: number; onShowA
       </div>
       {count > 0 && <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{children}</div>}
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
-        Most Myanmar hackathons (like KBZPay&apos;s AppCube bootcamp) are only announced on Facebook, which can&apos;t be
-        scraped.{" "}
+        Many Myanmar hackathons (like KBZPay&apos;s AppCube bootcamp) are only announced on Facebook.{" "}
+        <a href="/settings#facebook" className="font-medium text-indigo-600 hover:underline dark:text-indigo-400">
+          Follow Facebook pages
+        </a>{" "}
+        to list their hackathon posts here, or{" "}
         <a href={FACEBOOK_SEARCH} target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 hover:underline dark:text-indigo-400">
-          Search Facebook
+          search Facebook
         </a>{" "}
         and{" "}
         <a href="/saved#add" className="font-medium text-indigo-600 hover:underline dark:text-indigo-400">
-          add one from its link
-        </a>{" "}
-        to get countdowns and reminders.
+          paste a post
+        </a>
+        : its name, deadline and dates fill in by themselves.
       </p>
     </section>
   );

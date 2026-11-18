@@ -5,9 +5,10 @@ import { alertNewMyanmarEvents, escapeHtml, link, telegram, when } from "@/lib/a
 import { pageUrl } from "@/lib/feeds";
 import { applyFilters, DEFAULT_FILTERS, type FilterState } from "@/lib/filters";
 import { siteUrl } from "@/lib/paths";
+import { parsePost } from "@/lib/postParse";
 import { isSource, LISTED_SOURCES, sourceName } from "@/lib/sources/meta";
 import type { Hackathon, Source } from "@/lib/types";
-import { compactUsd, remainingText } from "@/lib/when";
+import { compactUsd, googleCalendarUrl, remainingText } from "@/lib/when";
 
 // Telegram webhook for the alerts bot. Telegram sends the TELEGRAM_WEBHOOK_SECRET set with
 // setWebhook in a header, and only messages from TELEGRAM_CHAT_ID (the owner) get answered.
@@ -33,13 +34,21 @@ const HELP = [
   "",
   ...COMMANDS.map(([c, d]) => `/${c} · ${escapeHtml(d)}`),
   "",
+  "Found one on Facebook? Forward or paste the post here and I'll pull out the deadline, dates and place, with a link that saves it in one tap.",
+  "",
   "New Myanmar events from every source are also sent to you every morning at 6:30.",
 ].join("\n");
 
 const MAX_ITEMS = 12;
 
 interface Update {
-  message?: { chat: { id: number }; text?: string };
+  message?: {
+    chat: { id: number };
+    text?: string;
+    caption?: string; // forwarded photo posts carry their text here
+    entities?: { type: string; url?: string }[];
+    caption_entities?: { type: string; url?: string }[];
+  };
 }
 
 type Reply = (text: string) => Promise<unknown>;
@@ -85,6 +94,65 @@ async function scrape(reply: Reply, filter: Source | null) {
   if (alerts.sent.length) text += `\n\n🆕 ${alerts.sent.length} new, sent above.`;
   if (errors.length) text += `\n\n⚠️ Couldn't reach ${errors.map((e) => escapeHtml(sourceName(e.source))).join(", ")}.`;
   await reply(text);
+}
+
+/** A post someone forwarded or pasted: what it says, and links to save it or put its deadline in a calendar. */
+async function fromPost(reply: Reply, text: string, linkedUrl: string | null) {
+  const p = parsePost(text);
+  if (!p.isHackathon && !p.deadline && !p.startDate) {
+    return reply(`That doesn't look like a hackathon post, so here's what I can do:\n\n${HELP}`);
+  }
+  const url = linkedUrl ?? p.url;
+  const params = new URLSearchParams();
+  const put = (k: string, v: string | null | undefined) => v && params.set(k, v);
+  put("name", p.title);
+  put("url", url);
+  put("deadline", p.deadline);
+  put("label", p.deadlineLabel);
+  put("start", p.startDate);
+  put("end", p.endDate);
+  put("location", p.location);
+  put("mode", p.mode);
+  const saveLink = `${siteUrl()}/saved#add?${params}`;
+  const listing: Hackathon = {
+    id: "manual:telegram",
+    source: "manual",
+    title: p.title ?? "Hackathon",
+    url: url ?? siteUrl(),
+    image: null,
+    startDate: p.startDate,
+    endDate: p.endDate,
+    deadline: p.deadline,
+    deadlineLabel: p.deadlineLabel,
+    location: p.location ?? "Myanmar",
+    mode: p.mode ?? "in-person",
+    prizeUsd: p.prizeUsd,
+    themes: [],
+    participants: null,
+    organizer: null,
+    companies: [],
+    myanmar: true,
+  };
+  const calendar = googleCalendarUrl(listing, p.deadline && p.deadlineLabel !== "Starts" ? "deadline" : "event");
+  return reply(
+    [
+      `📝 <b>${escapeHtml(p.title ?? "Untitled hackathon")}</b>`,
+      p.deadline && p.deadlineLabel !== "Starts"
+        ? `⏳ ${escapeHtml(p.deadlineLabel)}: ${escapeHtml(when({ startDate: p.deadline }))} (Yangon time)`
+        : "⏳ No deadline found in the post",
+      p.startDate ? `📅 ${escapeHtml(when({ startDate: p.startDate }))}${p.endDate && p.endDate.slice(0, 10) !== p.startDate.slice(0, 10) ? ` → ${escapeHtml(when({ startDate: p.endDate }))}` : ""}` : null,
+      p.location ? `📍 ${escapeHtml(p.location)}` : null,
+      p.prizeUsd ? `🏆 ${compactUsd(p.prizeUsd)}` : null,
+      url ? `🔗 ${escapeHtml(url)}` : null,
+      "",
+      link(saveLink, "➕ Save it in Hackathon Hunter"),
+      calendar ? link(calendar, "📆 Add it to Google Calendar") : null,
+      "",
+      "Check the dates before you rely on them: I read them from the post's text.",
+    ]
+      .filter((l) => l !== null)
+      .join("\n"),
+  );
 }
 
 async function answer(reply: Reply, name: string, args: string[]) {
@@ -148,16 +216,21 @@ export async function POST(req: Request) {
 
   const update = (await req.json().catch(() => ({}))) as Update;
   const msg = update.message;
+  const text = msg?.text ?? msg?.caption;
   // Anyone can find the bot, but it only works for its owner.
-  if (!msg?.text || String(msg.chat.id) !== chatId) return NextResponse.json({ ok: true });
+  if (!msg || !text || String(msg.chat.id) !== chatId) return NextResponse.json({ ok: true });
 
-  const [command, ...args] = msg.text.trim().split(/\s+/);
+  const [command, ...args] = text.trim().split(/\s+/);
   const name = command.toLowerCase().replace(/@.*$/, ""); // "/scrape@htaFridaybot" in group chats
   const reply: Reply = (text) =>
     telegram(token, "sendMessage", { chat_id: chatId, text, parse_mode: "HTML", link_preview_options: { is_disabled: true } });
   const fail = (e: unknown) => reply(`❌ ${escapeHtml(e instanceof Error ? e.message : String(e))}`);
 
-  if (name === "/scrape") {
+  if (!name.startsWith("/")) {
+    // A forwarded or pasted post. Links hidden behind words come as text_link entities.
+    const linked = [...(msg.entities ?? []), ...(msg.caption_entities ?? [])].find((e) => e.type === "text_link" && e.url)?.url ?? null;
+    after(() => fromPost(reply, text, linked).catch(fail));
+  } else if (name === "/scrape") {
     const arg = args[0]?.toLowerCase();
     const filter = arg && isSource(arg) && arg !== "manual" ? arg : null;
     await reply("⏳ Scraping…");

@@ -23,7 +23,10 @@ For production: `npm run build && npm start`.
 - **Installable app**: a web app manifest and a service worker (`public/sw.js`, production only) let you install it on Android, iPhone or desktop. Pages and listings you've opened work offline; the install button appears in the nav bar and Settings when the browser offers it.
 
 - **Social**: the latest posts from r/hackathon and r/hackathons, sorted into *Announcements*, *Looking for team* and *Discussion*. Posts that name a listed hackathon are linked to it, and its card shows a 💬 count, which is handy for finding teammates.
-- **LinkedIn & Facebook**: neither offers a public way to read posts, so the Social page has buttons that open their own search. If you find a hackathon there, use **+ Add a hackathon from a link** on the Saved page to track it with countdowns and reminders.
+- **LinkedIn & Facebook**: neither offers a public way to read posts, so the Social page has buttons that open their own search. If you find a hackathon there, use **Add from link** on the Saved page: paste the post's text and the name, deadline, dates, place, format and USD prize are filled in (`lib/postParse.ts`; English and Burmese dates and digits both work).
+- **Facebook**: the app never logs into Facebook (that breaks Meta's terms and gets accounts disabled, and Facebook blocks servers anyway). Instead:
+  - **Pages you follow, automatically**: make a feed link for each public page with a feed service such as [rss.app](https://rss.app) or [FetchRSS](https://fetchrss.com), and put the links in the `FACEBOOK_FEEDS` environment variable (separated by commas or spaces). `lib/sources/facebook.ts` reads them (RSS, Atom or JSON Feed), keeps posts that read like a hackathon or competition, posted in the last 60 days and not already over, and lists them as Myanmar events, so they also reach the Telegram alerts. Feed links can also go in `FEEDS_IN_CODE` in that file.
+  - **One post at a time**: on Android, install the app and share a post to it (Facebook → Share → Hackathon Hunter; the manifest's `share_target` opens Saved with it filled in). On a computer, drag the **＋ Hackathon Hunter** button in Settings to your bookmarks bar and click it on a post with its text selected. Or forward the post to the Telegram bot, which replies with what it found and a one-tap save link.
 
 Bookmarks are stored in your browser's `localStorage`. They aren't synced between browsers, so use Export/Import to move them.
 
@@ -38,6 +41,7 @@ Bookmarks are stored in your browser's `localStorage`. They aren't synced betwee
 | Devfolio | Public search API behind `devfolio.co/hackathons` (`api.devfolio.co/api/search/hackathons`, the *open* and *upcoming* tabs). Mostly India and Asia (e.g. ETHChiangmai). Sponsors are kept, so a "Google Gemini" sponsor makes it a Google hackathon | Applications close (falls back to the start time) |
 | DoraHacks | Public hub API behind `dorahacks.io/hackathon` (`/api/v1/hub/hackathons`). Live hackathons come first, so it pages until a page is all finished. Prize pools in USD, USDC or USDT count as prizes | End of the submission period |
 | Hack Club | Public JSON at `hackathons.hackclub.com/api/events/upcoming` (high school hackathons worldwide) | Event start time |
+| Facebook | Feed links you configure in `FACEBOOK_FEEDS` (see above). Dates, place and prize are read from the post's text, so they're a best guess | The deadline the post names (registration, applications or submissions), otherwise the start |
 | Luma    | Public discover search for "hackathon". Results favor events near wherever the app runs, so Myanmar gets its own searches ("Myanmar", "Yangon", "Cursor Myanmar"…) plus the Myanmar community calendars (e.g. Cursor & Grok Myanmar). Every Myanmar event is kept, meetups and workshops included, judged by venue country, the Asia/Yangon time zone or a Myanmar-based calendar | Event start time |
 | Google Developer Groups | Public JSON on `gdg.community.dev`: upcoming events of every GDG chapter in Myanmar (DevFest Yangon, I/O Extended…) | Event start time |
 | NASA Space Apps | Public GraphQL API behind `spaceappschallenge.org`. Lists each upcoming challenge once (worldwide, with local event and registration counts) plus its local events in Myanmar | Event start time |
@@ -67,6 +71,7 @@ The bot also answers commands (send `/help` once and they appear in Telegram's `
 | `/search ai agents` | Search, same as the Browse page's search box |
 | `/scrape` | Scrape every source now and list the Myanmar events (`/scrape luma`, `/scrape devfolio`… for one source); new ones are announced too |
 | `/stats` | Listings per source, and which sources are down |
+| *(any post)* | Forward or paste a hackathon post: the bot replies with its name, deadline, dates and place, a one-tap "save it" link and a Google Calendar link |
 
 For that, add `TELEGRAM_WEBHOOK_SECRET` (any random string) to Vercel and point the bot at the app once: `https://api.telegram.org/bot<token>/setWebhook?url=https://<your-domain>/api/telegram&secret_token=<secret>`. Only the chat in `TELEGRAM_CHAT_ID` gets answers.
 

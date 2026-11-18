@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Bookmarklet } from "@/components/Bookmarklet";
 import { ExportButton, ImportButton } from "@/components/DataActions";
 import { PageHeader } from "@/components/PageHeader";
 import { useInstall } from "@/components/Pwa";
 import { SubscribeButton } from "@/components/SubscribeMenu";
 import { SyncButton } from "@/components/SyncLink";
-import { BellIcon, CalendarPlusIcon, DownloadAppIcon, GearIcon, ShieldIcon, TrashIcon } from "@/components/icons";
+import { BellIcon, CalendarPlusIcon, DownloadAppIcon, GearIcon, LinkIcon, ShieldIcon, TrashIcon } from "@/components/icons";
 import { btnPrimary, panel } from "@/lib/ui";
 import { useTracker } from "@/lib/useTracker";
 
@@ -70,6 +71,40 @@ export default function SettingsPage() {
             </p>
           </div>
           <SubscribeButton query={`ids=${listedIds.join(",")}`} label="Your saved hackathons" disabled={listedIds.length === 0} />
+        </div>
+      </Section>
+
+      <Section icon={<LinkIcon size={18} />} title="Add hackathons from Facebook" id="facebook">
+        <div className="space-y-4 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+          <div>
+            <p className="font-medium text-zinc-900 dark:text-zinc-100">On a computer</p>
+            <p className="mt-0.5">
+              Drag this button to your bookmarks bar. Open a post (click its date so the address is the post&apos;s own), select its text,
+              and click the bookmark: the post opens in Add from link with the name, deadline, dates and place filled in.
+            </p>
+            <div className="mt-2.5">
+              <Bookmarklet />
+            </div>
+          </div>
+          <div>
+            <p className="font-medium text-zinc-900 dark:text-zinc-100">On an Android phone</p>
+            <p className="mt-0.5">
+              Install the app (below), copy the post&apos;s text, then tap Share → Hackathon Hunter. On iPhone, copy the post and paste it
+              into Add from link on the Saved page.
+            </p>
+          </div>
+          <div>
+            <p className="font-medium text-zinc-900 dark:text-zinc-100">In Telegram</p>
+            <p className="mt-0.5">Forward or paste a post to your Hackathon Hunter bot. It replies with the dates it found and a link that saves it in one tap.</p>
+          </div>
+          <div>
+            <p className="font-medium text-zinc-900 dark:text-zinc-100">Automatically, from pages you follow</p>
+            <p className="mt-0.5">
+              Make a feed link for each Facebook page (for example FOSS Myanmar) with a feed service such as rss.app or FetchRSS, and put the
+              links in the <code className="rounded bg-zinc-100 px-1 text-xs dark:bg-zinc-800">FACEBOOK_FEEDS</code> setting on Vercel. Every
+              hackathon post on those pages then shows up in the Myanmar section and in your Telegram alerts.
+            </p>
+          </div>
         </div>
       </Section>
 
