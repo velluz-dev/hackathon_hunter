@@ -223,6 +223,87 @@ export const ShieldIcon = (p: IconProps) => (
 );
 
 /** Brand mark: a crosshair over a code bracket. */
+export const PencilIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+    <path d="m13.5 6.5 4 4" />
+  </Icon>
+);
+
+export const ShareIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 15V3M8 7l4-4 4 4" />
+    <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
+  </Icon>
+);
+
+export const CopyIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="9" y="9" width="11" height="11" rx="2" />
+    <path d="M5 15V6a2 2 0 0 1 2-2h8" />
+  </Icon>
+);
+
+export const CheckIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m5 12.5 4.5 4.5L19 7" />
+  </Icon>
+);
+
+export const RssIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M5 11a8 8 0 0 1 8 8M5 5a14 14 0 0 1 14 14" />
+    <circle cx="6" cy="18" r="1.3" fill="currentColor" />
+  </Icon>
+);
+
+export const PhoneIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="7" y="2.5" width="10" height="19" rx="2.5" />
+    <path d="M11 18.5h2" />
+  </Icon>
+);
+
+export const NoteIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M6 3h9l4 4v14H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
+    <path d="M9 12h6M9 16h4" />
+  </Icon>
+);
+
+export const ArchiveIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="4" width="18" height="4.5" rx="1" />
+    <path d="M5 8.5V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8.5M10 12.5h4" />
+  </Icon>
+);
+
+export const MapIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m9 4-6 2.5v14L9 18l6 2.5 6-2.5V4l-6 2.5L9 4Z" />
+    <path d="M9 4v14M15 6.5v14" />
+  </Icon>
+);
+
+export const SendIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M21 3 10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5 21 3Z" />
+  </Icon>
+);
+
+export const NewIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
+  </Icon>
+);
+
+export const DownloadAppIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="4" y="3" width="16" height="18" rx="3" />
+    <path d="M12 7.5v7M9 11.5l3 3 3-3" />
+  </Icon>
+);
+
 export const LogoMark = ({ size = 28 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" className="shrink-0">
     <rect width="32" height="32" rx="9" className="fill-indigo-600" />

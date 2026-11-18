@@ -2,19 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
 import { ChevronIcon, HelpIcon } from "@/components/icons";
+import { LISTED_SOURCES, SOURCE_INFO } from "@/lib/sources/meta";
 
 export const metadata: Metadata = { title: "Help · Hackathon Hunter" };
 
-const SOURCES = [
-  ["Devpost", "Open hackathons with prizes and registration counts"],
-  ["MLH", "Major League Hacking's season events"],
-  ["Cerebral Valley", "AI hackathons, often sponsored by big tech"],
-  ["lablab.ai", "Sponsor-run AI hackathons"],
-  ["Luma", "Public hackathon events, plus every Myanmar event (Cursor, Grok and other community meetups)"],
-  ["NASA Space Apps", "Each challenge plus its local events in Myanmar"],
-  ["Google Developer Groups", "DevFest, I/O Extended and other GDG events in Myanmar"],
-  ["Local picks", "Hand-picked Myanmar events that no site lists"],
-];
+const SOURCES = LISTED_SOURCES.map((s) => [s === "curated" ? "Local picks" : SOURCE_INFO[s].name, SOURCE_INFO[s].about]);
 
 const link = "font-medium text-indigo-600 hover:underline dark:text-indigo-400";
 
@@ -39,12 +31,25 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
     ),
   },
   {
+    q: "What's on a hackathon's page?",
+    a: (
+      <p>
+        Tap any card to open its page: the exact times in Yangon time and your own, a timeline of deadlines, prizes, themes, sponsors,
+        Reddit posts that mention it, links for finding teammates and similar hackathons. From there you can add it to Google Calendar or
+        share it to Telegram, Viber, Facebook, WhatsApp, X or LinkedIn with a preview image. The arrow icon on a card opens the original
+        site directly.
+      </p>
+    ),
+  },
+  {
     q: "How does saving work?",
     a: (
       <p>
         Tap the star on any card to save it, then track it on the <Link href="/saved" className={link}>Saved</Link> board as
-        Interested, Registered, Building or Submitted. Drag cards between columns or change the status on the card. Saved hackathons are
-        stored only in this browser, so use Export and Import in <Link href="/settings" className={link}>Settings</Link> to move them.
+        Interested, Registered, Building or Submitted. Drag cards between columns or change the status on the card. Tap the pencil for
+        notes, your team, a repo or demo link and a personal reminder. Finished hackathons move to Past, where you can record whether you
+        won, made the finals or took part. Saved hackathons are stored only in this browser: use <strong>Send to phone</strong> to move
+        them with a link, or Export and Import in <Link href="/settings" className={link}>Settings</Link>.
       </p>
     ),
   },
@@ -52,10 +57,39 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
     q: "How do deadline reminders work?",
     a: (
       <p>
-        Saved hackathons closing within 72 hours show up in a banner. If you turn on notifications in{" "}
-        <Link href="/settings#notifications" className={link}>Settings</Link>, you&apos;ll also get a browser notification a day before,
-        while the site is open in a tab. For reminders that work even when it&apos;s closed, use the calendar button on a card to add the
-        deadline to your calendar.
+        Saved hackathons closing within 72 hours, and your own reminders, show up in a banner. If you turn on notifications in{" "}
+        <Link href="/settings#notifications" className={link}>Settings</Link>, you&apos;ll also get a browser notification a day before a
+        deadline and when a reminder is due, while the site is open in a tab. For reminders that work even when it&apos;s closed, subscribe
+        to your saved list in your calendar (Settings or Saved → Subscribe), or use the calendar button on a card.
+      </p>
+    ),
+  },
+  {
+    q: "Can I get new hackathons in my calendar or feed reader?",
+    a: (
+      <p>
+        Yes. Filter the Browse page the way you like (for example Myanmar only, or online AI hackathons) and press{" "}
+        <strong>Subscribe</strong>. You get a calendar link for Google, Apple or Outlook Calendar, an RSS feed and a JSON link for that
+        exact view. Calendar apps re-check it every few hours, so new hackathons and changed deadlines appear on their own.
+      </p>
+    ),
+  },
+  {
+    q: "What does the “New” badge mean?",
+    a: (
+      <p>
+        It marks hackathons that showed up since you last looked, and stays for two days. Use the <strong>New</strong> chip above the
+        listings to see only those. It&apos;s tracked in this browser, so nothing is marked on your very first visit.
+      </p>
+    ),
+  },
+  {
+    q: "Can I use it like an app on my phone?",
+    a: (
+      <p>
+        Yes. Install it from your browser (Android and desktop Chrome or Edge: menu → Install app; iPhone: Share → Add to Home Screen),
+        or use the install button in <Link href="/settings#install" className={link}>Settings</Link>. It opens without the browser bars,
+        and pages you&apos;ve opened before still work offline.
       </p>
     ),
   },

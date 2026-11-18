@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { ExportButton, ImportButton } from "@/components/DataActions";
 import { PageHeader } from "@/components/PageHeader";
-import { BellIcon, CalendarPlusIcon, GearIcon, ShieldIcon, TrashIcon } from "@/components/icons";
+import { useInstall } from "@/components/Pwa";
+import { SubscribeButton } from "@/components/SubscribeMenu";
+import { SyncButton } from "@/components/SyncLink";
+import { BellIcon, CalendarPlusIcon, DownloadAppIcon, GearIcon, ShieldIcon, TrashIcon } from "@/components/icons";
 import { btnPrimary, panel } from "@/lib/ui";
 import { useTracker } from "@/lib/useTracker";
 
@@ -20,7 +23,11 @@ const PERMISSION_TEXT: Record<Permission, string> = {
 export default function SettingsPage() {
   const { tracked, clear } = useTracker();
   const saved = Object.keys(tracked).length;
+  const listedIds = Object.values(tracked)
+    .filter((t) => t.snapshot.source !== "manual")
+    .map((t) => t.snapshot.id);
   const [permission, setPermission] = useState<Permission>("unknown");
+  const { canInstall, install, installed } = useInstall();
 
   useEffect(() => {
     setPermission("Notification" in window ? Notification.permission : "unsupported");
@@ -54,6 +61,39 @@ export default function SettingsPage() {
             an alert the day before.
           </p>
         </div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Your saved list in your calendar</p>
+            <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
+              Subscribe once and Google or Apple Calendar keeps every saved deadline up to date, with reminders a day and 2 hours before.
+              Save more and subscribe again to add them.
+            </p>
+          </div>
+          <SubscribeButton query={`ids=${listedIds.join(",")}`} label="Your saved hackathons" disabled={listedIds.length === 0} />
+        </div>
+      </Section>
+
+      <Section icon={<DownloadAppIcon size={18} />} title="Install the app" id="install">
+        <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+          {installed
+            ? "You're using the installed app."
+            : "Install Hackathon Hunter on your phone or computer: it opens like an app, without the browser bars, and the pages you've opened work offline."}
+        </p>
+        {!installed && (
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            {canInstall && (
+              <button onClick={install} className={btnPrimary}>
+                <DownloadAppIcon size={16} />
+                Install app
+              </button>
+            )}
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              {canInstall
+                ? "Or use your browser's menu."
+                : "Chrome and Edge: menu → Install app (or Add to Home screen on Android). iPhone and iPad: Share → Add to Home Screen in Safari."}
+            </p>
+          </div>
+        )}
       </Section>
 
       <Section icon={<ShieldIcon size={18} />} title="Your data">
@@ -64,6 +104,7 @@ export default function SettingsPage() {
           device.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
+          <SyncButton />
           <ExportButton />
           <ImportButton />
           <button

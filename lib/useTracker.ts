@@ -4,7 +4,11 @@ import { useCallback, useSyncExternalStore } from "react";
 import { detectCompanies } from "./companies";
 import { isMyanmar } from "./myanmar";
 import { safeUrl } from "./safeUrl";
-import { STATUSES, type Hackathon, type Mode, type Source, type TrackedItem, type TrackStatus } from "./types";
+import { isSource } from "./sources/meta";
+import { RESULTS, STATUSES, type Hackathon, type Mode, type TrackedItem, type TrackResult, type TrackStatus } from "./types";
+
+/** The fields you can edit on a saved hackathon. */
+export type TrackedExtras = Pick<TrackedItem, "notes" | "team" | "project" | "remindAt" | "result">;
 
 type Tracked = Record<string, TrackedItem>;
 
@@ -47,7 +51,7 @@ function sanitizeImport(data: unknown): Tracked {
   const out: Tracked = {};
   for (const item of Object.values(data as Record<string, unknown>)) {
     if (typeof item !== "object" || item === null) continue;
-    const { status, savedAt, snapshot: s } = item as Record<string, unknown>;
+    const { status, savedAt, snapshot: s, notes, team, project, remindAt, result } = item as Record<string, unknown>;
     if (!STATUSES.includes(status as TrackStatus) || typeof s !== "object" || s === null) continue;
     const h = s as Record<string, unknown>;
     const id = str(h.id, 200);
@@ -55,14 +59,14 @@ function sanitizeImport(data: unknown): Tracked {
     const url = safeUrl(h.url);
     if (!id || !title || !url) continue;
     const themes = Array.isArray(h.themes) ? h.themes.filter((t) => typeof t === "string").slice(0, 20) : [];
+    const sponsors = Array.isArray(h.sponsors) ? h.sponsors.filter((t) => typeof t === "string").slice(0, 40) : [];
     out[id] = {
       status: status as TrackStatus,
       savedAt: isoOrNull(savedAt) ?? new Date().toISOString(),
+      ...cleanExtras({ notes, team, project, remindAt, result }),
       snapshot: {
         id,
-        source: (["devpost", "mlh", "cerebralvalley", "lablab", "luma", "spaceapps", "gdg", "curated", "manual"] as Source[]).includes(h.source as Source)
-          ? (h.source as Source)
-          : "manual",
+        source: isSource(h.source) ? h.source : "manual",
         title,
         url,
         image: safeUrl(h.image),
@@ -76,12 +80,34 @@ function sanitizeImport(data: unknown): Tracked {
         themes: themes as string[],
         participants: typeof h.participants === "number" && Number.isFinite(h.participants) ? h.participants : null,
         organizer: str(h.organizer),
-        companies: detectCompanies({ title, organizer: str(h.organizer) }),
+        sponsors: sponsors as string[],
+        description: str(h.description, 1000),
+        companies: detectCompanies({ title, organizer: str(h.organizer), sponsors: sponsors as string[] }),
         myanmar: isMyanmar({ title, location: str(h.location, 200) ?? "" }),
       },
     };
   }
   return out;
+}
+
+/** Keeps only well-formed extras: bounded text, an http(s) project link, a real date and a known result. */
+function cleanExtras(x: Record<string, unknown>): TrackedExtras {
+  const out: TrackedExtras = {};
+  const notes = str(x.notes, 5000)?.trim();
+  const team = str(x.team, 300)?.trim();
+  const project = safeUrl(x.project);
+  const remindAt = isoOrNull(x.remindAt);
+  if (notes) out.notes = notes;
+  if (team) out.team = team;
+  if (project) out.project = project;
+  if (remindAt) out.remindAt = remindAt;
+  if (RESULTS.includes(x.result as TrackResult)) out.result = x.result as TrackResult;
+  return out;
+}
+
+/** How many entries in an exported file or sync link are valid, without importing them. */
+export function countImportable(data: unknown): number {
+  return Object.keys(sanitizeImport(data)).length;
 }
 
 function write(next: Tracked) {
@@ -107,7 +133,8 @@ export function useTracker() {
 
   const save = useCallback((h: Hackathon, status: TrackStatus = "interested") => {
     const cur = read();
-    write({ ...cur, [h.id]: { status, savedAt: cur[h.id]?.savedAt ?? new Date().toISOString(), snapshot: h } });
+    // Saving again keeps your notes and links.
+    write({ ...cur, [h.id]: { ...cur[h.id], status, savedAt: cur[h.id]?.savedAt ?? new Date().toISOString(), snapshot: h } });
   }, []);
 
   const remove = useCallback((id: string) => {
@@ -119,6 +146,15 @@ export function useTracker() {
   const setStatus = useCallback((id: string, status: TrackStatus) => {
     const cur = read();
     if (cur[id]) write({ ...cur, [id]: { ...cur[id], status } });
+  }, []);
+
+  /** Replaces a saved hackathon's notes, team, project link, reminder and result. */
+  const update = useCallback((id: string, extras: TrackedExtras, status?: TrackStatus) => {
+    const cur = read();
+    if (!cur[id]) return;
+    const { notes: _n, team: _t, project: _p, remindAt: _r, result: _res, ...base } = cur[id];
+    void [_n, _t, _p, _r, _res];
+    write({ ...cur, [id]: { ...base, ...(status ? { status } : {}), ...cleanExtras(extras as Record<string, unknown>) } });
   }, []);
 
   /** Refresh stored snapshots with the latest live data so saved cards stay current. */
@@ -144,5 +180,5 @@ export function useTracker() {
     return Object.keys(valid).length;
   }, []);
 
-  return { tracked, save, remove, setStatus, syncSnapshots, importData, clear };
+  return { tracked, save, remove, setStatus, update, syncSnapshots, importData, clear };
 }

@@ -5,6 +5,10 @@ import { useSearchParams } from "next/navigation";
 import { Filters } from "./Filters";
 import { HackathonCard } from "./HackathonCard";
 import { StatCards, type Stat } from "./StatCards";
+import { SubscribeButton } from "./SubscribeMenu";
+import { describeFilters } from "@/lib/select";
+import { sourceName } from "@/lib/sources/meta";
+import { useFreshIds } from "@/lib/useSeen";
 import { BoltIcon, BuildingIcon, FlameIcon, InboxIcon, TrophyIcon } from "./icons";
 import {
   applyFilters,
@@ -44,11 +48,13 @@ export function HackathonBrowser({ data, postCounts }: { data: HackathonsRespons
 
   // Before mount `now` is null; the fetch time is close enough for date-based counts.
   const at = now ?? Date.parse(data.fetchedAt);
+  const ids = useMemo(() => data.hackathons.map((h) => h.id), [data.hackathons]);
+  const fresh = useFreshIds(ids);
   const themes = useMemo(() => topThemes(data.hackathons), [data.hackathons]);
   const companies = useMemo(() => companyCounts(data.hackathons), [data.hackathons]);
   // Typing stays responsive: the grid filters against a deferred copy and catches up a moment later.
   const deferred = useDeferredValue(filters);
-  const results = useMemo(() => applyFilters(data.hackathons, deferred, at), [data.hackathons, deferred, at]);
+  const results = useMemo(() => applyFilters(data.hackathons, deferred, at, fresh), [data.hackathons, deferred, at, fresh]);
   const myanmar = useMemo(() => data.hackathons.filter((h) => h.myanmar), [data.hackathons]);
 
   const totals = useMemo(() => {
@@ -127,6 +133,7 @@ export function HackathonBrowser({ data, postCounts }: { data: HackathonsRespons
               tracked={tracked[h.id]}
               now={now}
               postCount={postCounts[h.id]}
+              isNew={fresh.has(h.id)}
               onSave={save}
               onRemove={remove}
               onStatus={setStatus}
@@ -135,7 +142,7 @@ export function HackathonBrowser({ data, postCounts }: { data: HackathonsRespons
         </MyanmarSection>
       )}
 
-      <Filters value={filters} onChange={update} themes={themes} companies={companies} />
+      <Filters value={filters} onChange={update} themes={themes} companies={companies} freshCount={fresh.size} />
 
       {filters.myanmar && (
         <p className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
@@ -148,16 +155,22 @@ export function HackathonBrowser({ data, postCounts }: { data: HackathonsRespons
 
       {data.errors.length > 0 && (
         <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
-          Couldn&apos;t load {data.errors.map((e) => e.source.toUpperCase()).join(" and ")} right now (
+          Couldn&apos;t load {data.errors.map((e) => sourceName(e.source)).join(", ")} right now (
           {data.errors.map((e) => e.message).join("; ")}). Showing the rest.
         </p>
       )}
 
-      <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-        {results.length === data.hackathons.length
-          ? `${results.length} hackathons`
-          : `${results.length} of ${data.hackathons.length} hackathons`}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-baseline gap-3">
+          <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            {results.length === data.hackathons.length
+              ? `${results.length} hackathons`
+              : `${results.length} of ${data.hackathons.length} hackathons`}
+          </p>
+          <SourceStatus data={data} now={now} />
+        </div>
+        <SubscribeButton query={filtersToParams({ ...filters, fresh: false }).toString()} label={describeFilters(filters)} />
+      </div>
 
       {results.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 px-6 py-16 text-center dark:border-zinc-700">
@@ -182,6 +195,7 @@ export function HackathonBrowser({ data, postCounts }: { data: HackathonsRespons
               tracked={tracked[h.id]}
               now={now}
               postCount={postCounts[h.id]}
+              isNew={fresh.has(h.id)}
               onSave={save}
               onRemove={remove}
               onStatus={setStatus}
@@ -198,6 +212,42 @@ export function HackathonBrowser({ data, postCounts }: { data: HackathonsRespons
         </div>
       )}
     </div>
+  );
+}
+
+function ago(iso: string, now: number | null): string {
+  if (now === null) return "";
+  const min = Math.max(0, Math.round((now - Date.parse(iso)) / 60_000));
+  return min < 1 ? "just now" : min < 60 ? `${min} min ago` : `${Math.round(min / 60)} h ago`;
+}
+
+/** "Updated 12 min ago · 12 sources", opening a per-source breakdown. */
+function SourceStatus({ data, now }: { data: HackathonsResponse; now: number | null }) {
+  const counts = Object.entries(data.counts ?? {}).sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0));
+  if (counts.length === 0) return null;
+  return (
+    <details className="group relative text-xs text-zinc-500 dark:text-zinc-400">
+      <summary className="cursor-pointer list-none hover:text-zinc-800 dark:hover:text-zinc-200 [&::-webkit-details-marker]:hidden">
+        {now !== null && `Updated ${ago(data.fetchedAt, now)} · `}
+        {counts.length} sources{data.errors.length > 0 && <span className="text-red-500"> · {data.errors.length} down</span>}
+      </summary>
+      <div className="absolute left-0 top-6 z-30 w-64 rounded-xl border border-zinc-200 bg-white p-3 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+        <ul className="space-y-1">
+          {counts.map(([s, n]) => (
+            <li key={s} className="flex justify-between gap-3">
+              <span className="text-zinc-700 dark:text-zinc-200">{sourceName(s)}</span>
+              <span className="tabular-nums">{n}</span>
+            </li>
+          ))}
+          {data.errors.map((e) => (
+            <li key={e.source} className="flex justify-between gap-3 text-red-600 dark:text-red-400">
+              <span>{sourceName(e.source)}</span>
+              <span>down</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </details>
   );
 }
 

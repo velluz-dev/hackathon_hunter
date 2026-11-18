@@ -1,18 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AddFromLink } from "@/components/AddFromLink";
 import { ExportButton, ImportButton } from "@/components/DataActions";
 import { DeadlineBanner } from "@/components/DeadlineBanner";
+import { EditTracked, TrackedNotes } from "@/components/EditTracked";
 import { HackathonCard } from "@/components/HackathonCard";
 import { Modal } from "@/components/Modal";
 import { CardSkeleton } from "@/components/Skeletons";
-import { InboxIcon, PlusIcon, StarIcon } from "@/components/icons";
-import { useNow } from "@/lib/time";
+import { SubscribeButton } from "@/components/SubscribeMenu";
+import { SyncButton, SyncImport } from "@/components/SyncLink";
+import { ArchiveIcon, InboxIcon, PlusIcon, StarIcon } from "@/components/icons";
+import { DAY, useNow } from "@/lib/time";
 import { btnGhost, btnPrimary } from "@/lib/ui";
 import { useTracker } from "@/lib/useTracker";
-import { STATUSES, type TrackStatus } from "@/lib/types";
+import { STATUSES, type TrackedItem, type TrackStatus } from "@/lib/types";
 
 const STATUS_META: Record<TrackStatus, { dot: string; ring: string; hint: string }> = {
   interested: { dot: "bg-sky-500", ring: "ring-sky-400", hint: "Worth a look" },
@@ -24,15 +27,36 @@ const STATUS_META: Record<TrackStatus, { dot: string; ring: string; hint: string
 // Custom drag type, so dropping a plain link or text onto a column does nothing.
 const DRAG_TYPE = "application/x-hackathon-id";
 
+/** Over: its end date has passed, or (with no end date) its deadline passed more than a week ago. */
+function isPast(t: TrackedItem, now: number): boolean {
+  const h = t.snapshot;
+  if (h.endDate) return Date.parse(h.endDate) < now;
+  return !!h.deadline && Date.parse(h.deadline) < now - 7 * DAY;
+}
+
 export default function SavedPage() {
-  const { tracked, save, remove, setStatus } = useTracker();
+  const { tracked, save, remove, setStatus, update } = useTracker();
   const now = useNow();
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
   const [over, setOver] = useState<TrackStatus | null>(null);
-  const items = Object.values(tracked).sort((a, b) =>
-    (a.snapshot.deadline ?? "9").localeCompare(b.snapshot.deadline ?? "9"),
+
+  const all = useMemo(
+    () => Object.values(tracked).sort((a, b) => (a.snapshot.deadline ?? "9").localeCompare(b.snapshot.deadline ?? "9")),
+    [tracked],
   );
+  const items = now === null ? all : all.filter((t) => !isPast(t, now));
+  const past = now === null ? [] : all.filter((t) => isPast(t, now)).reverse();
+  const editingItem = editing ? tracked[editing] : undefined;
+  // Calendar and RSS can only include hackathons the server lists, not ones added from a link.
+  const listedIds = all.filter((t) => t.snapshot.source !== "manual").map((t) => t.snapshot.id);
+  const stats = [
+    { label: "Saved", value: all.length },
+    { label: "Registered", value: all.filter((t) => t.status !== "interested").length },
+    { label: "Submitted", value: all.filter((t) => t.status === "submitted").length },
+    { label: "Wins & finals", value: all.filter((t) => t.result === "won" || t.result === "finalist").length },
+  ];
 
   // The Social page and Myanmar section link here with #add to open the form directly.
   useEffect(() => {
@@ -53,12 +77,14 @@ export default function SavedPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-white">Your hackathons</h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            {items.length
-              ? `${items.length} saved · drag a card between columns or change its status`
+            {all.length
+              ? `${items.length} active${past.length ? ` · ${past.length} past` : ""} · drag cards between columns, tap ✎ for notes`
               : "Track what you're interested in, from first look to submission."}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <SubscribeButton query={`ids=${listedIds.join(",")}`} label="Your saved hackathons" disabled={listedIds.length === 0} />
+          <SyncButton />
           <ExportButton />
           <ImportButton />
           <button onClick={() => setAdding(true)} className={btnPrimary}>
@@ -77,7 +103,28 @@ export default function SavedPage() {
         <AddFromLink onAdd={(h) => save(h)} onClose={() => setAdding(false)} />
       </Modal>
 
+      <Modal
+        open={!!editingItem}
+        onClose={() => setEditing(null)}
+        title={editingItem?.snapshot.title ?? "Notes"}
+        description="Only saved in this browser, and included when you export or send your list to your phone."
+      >
+        {editingItem && <EditTracked key={editingItem.snapshot.id} item={editingItem} onSave={update} onClose={() => setEditing(null)} />}
+      </Modal>
+
+      <SyncImport />
       <DeadlineBanner />
+
+      {all.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {stats.map((s) => (
+            <div key={s.label} className="rounded-xl border border-zinc-200/80 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
+              <p className="text-xl font-semibold tabular-nums text-zinc-900 dark:text-white">{s.value}</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {now === null ? (
         // Saved items live in this browser, so there's nothing to show until the page has mounted.
@@ -89,7 +136,7 @@ export default function SavedPage() {
             </div>
           ))}
         </div>
-      ) : items.length === 0 ? (
+      ) : all.length === 0 ? (
         <div className="animate-rise rounded-2xl border border-dashed border-zinc-300 px-6 py-16 text-center dark:border-zinc-700">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500 dark:bg-amber-950/50">
             <StarIcon size={22} />
@@ -161,7 +208,18 @@ export default function SavedPage() {
                       }}
                       className={`cursor-grab transition-opacity active:cursor-grabbing ${dragging === t.snapshot.id ? "opacity-40" : ""}`}
                     >
-                      <HackathonCard h={t.snapshot} tracked={t} now={now} compact onSave={save} onRemove={remove} onStatus={setStatus} />
+                      <HackathonCard
+                        h={t.snapshot}
+                        tracked={t}
+                        now={now}
+                        compact
+                        onEdit={setEditing}
+                        onSave={save}
+                        onRemove={remove}
+                        onStatus={setStatus}
+                      >
+                        <TrackedNotes item={t} />
+                      </HackathonCard>
                     </div>
                   ))}
                   {group.length === 0 && (
@@ -179,6 +237,36 @@ export default function SavedPage() {
             );
           })}
         </div>
+      )}
+
+      {past.length > 0 && (
+        <section className="space-y-3 pt-2">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-white">
+            <ArchiveIcon size={18} className="text-zinc-400" />
+            Past hackathons
+            <span className="rounded-full bg-zinc-200/80 px-2 text-xs font-medium tabular-nums text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+              {past.length}
+            </span>
+          </h2>
+          <p className="text-sm text-zinc-500">Finished ones move here. Tap ✎ to record how it went.</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {past.map((t) => (
+              <HackathonCard
+                key={t.snapshot.id}
+                h={t.snapshot}
+                tracked={t}
+                now={now}
+                compact
+                onEdit={setEditing}
+                onSave={save}
+                onRemove={remove}
+                onStatus={setStatus}
+              >
+                <TrackedNotes item={t} />
+              </HackathonCard>
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

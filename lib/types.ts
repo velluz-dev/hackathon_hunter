@@ -2,7 +2,19 @@
  * "manual" = added by the user from a link (e.g. a LinkedIn or Facebook post).
  * "curated" = hand-picked local events in lib/sources/curated.ts.
  */
-export type Source = "devpost" | "mlh" | "cerebralvalley" | "lablab" | "luma" | "spaceapps" | "gdg" | "curated" | "manual";
+export type Source =
+  | "devpost"
+  | "mlh"
+  | "cerebralvalley"
+  | "lablab"
+  | "devfolio"
+  | "dorahacks"
+  | "hackclub"
+  | "luma"
+  | "spaceapps"
+  | "gdg"
+  | "curated"
+  | "manual";
 export type Mode = "online" | "in-person" | "hybrid";
 
 export interface Hackathon {
@@ -22,6 +34,10 @@ export interface Hackathon {
   themes: string[];
   participants: number | null;
   organizer: string | null;
+  /** Sponsor names, when the source lists them (Devfolio). Also used to spot big tech sponsors. */
+  sponsors?: string[];
+  /** A short plain-text summary, when the source gives one. Shown on the hackathon's page. */
+  description?: string | null;
   /** Big tech companies running or sponsoring it, e.g. ["Google", "Meta"]. Filled in by the aggregator. */
   companies: string[];
   /** Takes place in Myanmar. Filled in by the aggregator. */
@@ -34,6 +50,8 @@ export type RawHackathon = Omit<Hackathon, "companies" | "myanmar">;
 export interface HackathonsResponse {
   hackathons: Hackathon[];
   errors: { source: Source; message: string }[];
+  /** How many live listings each source contributed after merging. */
+  counts?: Partial<Record<Source, number>>;
   fetchedAt: string;
 }
 
@@ -63,8 +81,21 @@ export interface SocialResponse {
 export const STATUSES = ["interested", "registered", "building", "submitted"] as const;
 export type TrackStatus = (typeof STATUSES)[number];
 
+/** How a finished hackathon went, set on the Saved page's Past section. */
+export const RESULTS = ["won", "finalist", "participated", "skipped"] as const;
+export type TrackResult = (typeof RESULTS)[number];
+
 export interface TrackedItem {
   status: TrackStatus;
   savedAt: string;
   snapshot: Hackathon;
+  /** Your own notes: ideas, requirements, anything to remember. */
+  notes?: string;
+  /** Teammates, as free text ("Aung, Su, Min"). */
+  team?: string;
+  /** Link to your repo, demo or submission. */
+  project?: string;
+  /** When to remind you (ISO), on top of the deadline reminder. */
+  remindAt?: string;
+  result?: TrackResult;
 }

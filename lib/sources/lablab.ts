@@ -1,3 +1,4 @@
+import { plainText } from "../text";
 import { extractJsonArray, readRscPayload } from "./nextPayload";
 import type { Mode, RawHackathon } from "../types";
 
@@ -39,6 +40,7 @@ function normalize(e: LablabEvent): RawHackathon {
     participants: null,
     // The first line of the description usually names the sponsor ("Build on AMD...").
     organizer: (e.description ?? "").split("\n")[0].slice(0, 200) || null,
+    description: plainText(e.description),
   };
 }
 

@@ -6,38 +6,12 @@ import { downloadIcs } from "@/lib/ics";
 import { iconButton, iconIdle } from "@/lib/ui";
 import type { Hackathon } from "@/lib/types";
 
-const SOURCE_NAMES: Partial<Record<Hackathon["source"], string>> = {
-  devpost: "Devpost",
-  mlh: "MLH",
-  cerebralvalley: "Cerebral Valley",
-  lablab: "lablab.ai",
-  luma: "Luma",
-  spaceapps: "NASA Space Apps",
-  gdg: "Google Developer Groups",
-  curated: "Local pick",
-};
-
-// Sources whose organizer field is a readable list of names worth showing.
-const SHOWS_ORGANIZER = new Set<Hackathon["source"]>(["devpost", "cerebralvalley", "luma", "gdg", "curated"]);
-
-export function sourceLabel(h: Hackathon): string {
-  const named = SOURCE_NAMES[h.source];
-  if (named) return named;
-  if (/linkedin\.com/i.test(h.url)) return "From LinkedIn";
-  if (/facebook\.com|fb\.(com|me)/i.test(h.url)) return "From Facebook";
-  if (/reddit\.com/i.test(h.url)) return "From Reddit";
-  return "Added by you";
-}
-
-/** The organizer, when the source gives a readable one that isn't just the source's own name. */
-export function organizer(h: Hackathon): string | null {
-  return h.organizer && SHOWS_ORGANIZER.has(h.source) && h.organizer !== sourceLabel(h) ? h.organizer : null;
-}
+export { organizer, sourceLabel } from "@/lib/labels";
 
 /** Event image, or a gradient tile with the title's first letter when there's none (or it fails to load). */
-export function Thumb({ h, compact }: { h: Hackathon; compact?: boolean }) {
+export function Thumb({ h, compact, large }: { h: Hackathon; compact?: boolean; large?: boolean }) {
   const [failed, setFailed] = useState(false);
-  const size = compact ? "h-10 w-10" : "h-12 w-12";
+  const size = large ? "h-16 w-16 text-2xl sm:h-20 sm:w-20" : compact ? "h-10 w-10" : "h-12 w-12";
   if (h.image && !failed) {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- remote thumbnails from many hosts

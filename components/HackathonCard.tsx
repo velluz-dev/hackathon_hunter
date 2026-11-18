@@ -4,8 +4,10 @@ import { memo } from "react";
 import Link from "next/link";
 import { CalendarButton, organizer, SaveButton, sourceLabel, Thumb } from "./cardParts";
 import { Countdown } from "./Countdown";
-import { BuildingIcon, CalendarIcon, ChatIcon, GlobeIcon, PinIcon, TrophyIcon, UsersIcon } from "./icons";
+import { BuildingIcon, CalendarIcon, ChatIcon, ExternalIcon, GlobeIcon, PencilIcon, PinIcon, TrophyIcon, UsersIcon } from "./icons";
+import { hackathonPath } from "@/lib/paths";
 import { formatDateRange } from "@/lib/time";
+import { iconButton, iconIdle } from "@/lib/ui";
 import { STATUSES, type Hackathon, type TrackedItem, type TrackStatus } from "@/lib/types";
 
 function formatPrize(n: number): string {
@@ -21,16 +23,38 @@ interface Props {
   postCount?: number;
   /** Tighter layout for narrow board columns: no themes or registrations. */
   compact?: boolean;
+  /** First seen in this browser recently. */
+  isNew?: boolean;
+  /** Shows a pencil button (the Saved board uses it for notes). */
+  onEdit?: (id: string) => void;
+  /** Extra content above the footer, e.g. your notes on the Saved board. */
+  children?: React.ReactNode;
   onSave: (h: Hackathon) => void;
   onRemove: (id: string) => void;
   onStatus: (id: string, s: TrackStatus) => void;
 }
 
-export const HackathonCard = memo(function HackathonCard({ h, tracked, now, postCount, compact, onSave, onRemove, onStatus }: Props) {
+export const HackathonCard = memo(function HackathonCard({
+  h,
+  tracked,
+  now,
+  postCount,
+  compact,
+  isNew,
+  onEdit,
+  children,
+  onSave,
+  onRemove,
+  onStatus,
+}: Props) {
   const location = h.mode === "hybrid" ? `Hybrid · ${h.location}` : h.location;
   const extraThemes = h.themes.length - MAX_THEMES;
   const companies = h.companies ?? []; // snapshots saved before company tagging have none
   const org = organizer(h);
+  // Listed hackathons open their page here; ones added from a link open the link itself.
+  const page = hackathonPath(h);
+  const titleClass =
+    "transition-colors after:absolute after:inset-0 after:rounded-2xl group-hover:text-indigo-600 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-indigo-500 dark:group-hover:text-indigo-400";
 
   return (
     <article className="group relative flex h-full min-w-0 flex-col rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-lg hover:shadow-zinc-900/[0.06] dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700 dark:hover:shadow-black/40">
@@ -43,14 +67,15 @@ export const HackathonCard = memo(function HackathonCard({ h, tracked, now, post
           </p>
           <h3 className={`mt-0.5 line-clamp-2 font-semibold leading-snug text-zinc-900 dark:text-zinc-50 ${compact ? "text-sm" : "text-[15px]"}`}>
             {/* The link covers the whole card; buttons and the status menu sit above it. */}
-            <a
-              href={h.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors after:absolute after:inset-0 after:rounded-2xl group-hover:text-indigo-600 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-indigo-500 dark:group-hover:text-indigo-400"
-            >
-              {h.title}
-            </a>
+            {page ? (
+              <Link href={page} className={titleClass}>
+                {h.title}
+              </Link>
+            ) : (
+              <a href={h.url} target="_blank" rel="noopener noreferrer" className={titleClass}>
+                {h.title}
+              </a>
+            )}
           </h3>
         </div>
         <div className="-mr-1 -mt-1">
@@ -74,6 +99,14 @@ export const HackathonCard = memo(function HackathonCard({ h, tracked, now, post
       </div>
 
       <div className={`mt-3 flex flex-wrap items-center gap-1.5 ${compact ? "px-3" : "px-4"}`}>
+        {isNew && (
+          <span
+            className="rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm shadow-emerald-500/30"
+            title="New since you last looked"
+          >
+            New
+          </span>
+        )}
         <Countdown deadline={h.deadline} label={h.deadlineLabel} now={now} />
         {companies.slice(0, 2).map((c) => (
           <span
@@ -111,6 +144,8 @@ export const HackathonCard = memo(function HackathonCard({ h, tracked, now, post
         </div>
       )}
 
+      {children}
+
       {/* Pushes the footer to the bottom so footers line up across a row. */}
       <div className={`flex-1 ${compact ? "min-h-3" : "min-h-4"}`} />
       <div
@@ -135,6 +170,28 @@ export const HackathonCard = memo(function HackathonCard({ h, tracked, now, post
           </Link>
         )}
         <div className="ml-auto flex items-center gap-1">
+          {onEdit && (
+            <button
+              onClick={() => onEdit(h.id)}
+              title="Notes, team and links"
+              aria-label={`Notes for ${h.title}`}
+              className={`${iconButton} h-7 w-7 rounded-md ${iconIdle}`}
+            >
+              <PencilIcon size={14} />
+            </button>
+          )}
+          {page && (
+            <a
+              href={h.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`Open on ${sourceLabel(h)}`}
+              aria-label={`Open ${h.title} on ${sourceLabel(h)}`}
+              className={`${iconButton} h-7 w-7 rounded-md ${iconIdle}`}
+            >
+              <ExternalIcon size={14} />
+            </a>
+          )}
           <CalendarButton h={h} />
           {tracked && (
             <select

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { BuildingIcon, ChevronIcon, ClockIcon, SearchIcon, SlidersIcon, SparkIcon, XIcon } from "./icons";
+import { BuildingIcon, ChevronIcon, ClockIcon, NewIcon, SearchIcon, SlidersIcon, SparkIcon, XIcon } from "./icons";
 import { DEFAULT_FILTERS, type FilterState, type RegStatus, type SortKey } from "@/lib/filters";
+import { LISTED_SOURCES, sourceName } from "@/lib/sources/meta";
 import { chip, field, fieldLabel as label } from "@/lib/ui";
 
 const MODES: { value: FilterState["mode"]; label: string }[] = [
@@ -25,6 +26,8 @@ interface Props {
   themes: string[];
   /** Big tech companies in the listings, with how many hackathons each has. */
   companies: [string, number][];
+  /** How many listings are new since your last visit. */
+  freshCount?: number;
 }
 
 /** Number of filters set inside the collapsible panel. */
@@ -32,7 +35,7 @@ function advancedCount(f: FilterState): number {
   return [f.loc, f.source !== "all", f.minPrize > 0, f.from, f.to, f.beginner, f.status !== "any"].filter(Boolean).length + f.themes.length;
 }
 
-export function Filters({ value: f, onChange, themes, companies }: Props) {
+export function Filters({ value: f, onChange, themes, companies, freshCount = 0 }: Props) {
   const advanced = advancedCount(f);
   const [open, setOpen] = useState(advanced > 0);
   const set = <K extends keyof FilterState>(k: K, v: FilterState[K]) => onChange({ ...f, [k]: v });
@@ -49,7 +52,7 @@ export function Filters({ value: f, onChange, themes, companies }: Props) {
           <SearchIcon size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input
             type="search"
-            placeholder="Search name, organizer or theme"
+            placeholder="Search names, themes, places, companies…"
             aria-label="Search hackathons"
             value={f.q}
             onChange={(e) => set("q", e.target.value)}
@@ -106,6 +109,18 @@ export function Filters({ value: f, onChange, themes, companies }: Props) {
             </button>
           ))}
         </div>
+        {(freshCount > 0 || f.fresh) && (
+          <button
+            onClick={() => set("fresh", !f.fresh)}
+            aria-pressed={f.fresh}
+            title="Listed since you last looked"
+            className={`${chip(f.fresh, "indigo")} rounded-lg text-[13px]`}
+          >
+            <NewIcon size={14} />
+            New
+            <span className={`tabular-nums ${f.fresh ? "opacity-80" : "text-zinc-400"}`}>{freshCount}</span>
+          </button>
+        )}
         <button onClick={() => set("closingSoon", !f.closingSoon)} aria-pressed={f.closingSoon} className={`${chip(f.closingSoon, "amber")} rounded-lg text-[13px]`}>
           <ClockIcon size={14} />
           Closing this week
@@ -159,14 +174,11 @@ export function Filters({ value: f, onChange, themes, companies }: Props) {
                 <label className={label} htmlFor="f-src">Source</label>
                 <select id="f-src" className={field} value={f.source} onChange={(e) => set("source", e.target.value as FilterState["source"])}>
                   <option value="all">All sources</option>
-                  <option value="devpost">Devpost</option>
-                  <option value="mlh">MLH</option>
-                  <option value="cerebralvalley">Cerebral Valley</option>
-                  <option value="lablab">lablab.ai</option>
-                  <option value="luma">Luma</option>
-                  <option value="spaceapps">NASA Space Apps</option>
-                  <option value="gdg">Google Developer Groups</option>
-                  <option value="curated">Local picks</option>
+                  {LISTED_SOURCES.map((s) => (
+                    <option key={s} value={s}>
+                      {s === "curated" ? "Local picks" : sourceName(s)}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>

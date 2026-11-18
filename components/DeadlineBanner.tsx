@@ -3,12 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { BellIcon, ClockIcon } from "./icons";
 import { useTracker } from "@/lib/useTracker";
-import { DAY, formatRemaining, useNow } from "@/lib/time";
+import { DAY, HOUR, formatRemaining, useNow } from "@/lib/time";
 
 const NOTIFIED_KEY = "hackathon-hunter:notified";
 const SHOWN = 3;
 
-/** Lists saved hackathons whose deadline is within 72h, and fires browser notifications for those within 24h. */
+/**
+ * Lists saved hackathons whose deadline is within 72h and your own reminders due within a day,
+ * and fires browser notifications for deadlines within 24h and reminders that are due.
+ */
 export function DeadlineBanner() {
   const { tracked } = useTracker();
   const now = useNow();
@@ -33,6 +36,20 @@ export function DeadlineBanner() {
     [tracked, now],
   );
 
+  // Your own "remind me at" times: shown from a day before until 12 hours after.
+  const reminders = useMemo(
+    () =>
+      now === null
+        ? []
+        : Object.values(tracked)
+            .filter((t) => {
+              const at = t.remindAt ? Date.parse(t.remindAt) : NaN;
+              return at - now <= DAY && now - at <= 12 * HOUR;
+            })
+            .sort((a, b) => a.remindAt!.localeCompare(b.remindAt!)),
+    [tracked, now],
+  );
+
   useEffect(() => {
     if (permission !== "granted" || now === null) return;
     let notified: string[] = [];
@@ -46,16 +63,47 @@ export function DeadlineBanner() {
         tag: h.id,
       });
     }
-    if (due.length) {
+    // A changed reminder time gets its own key, so it notifies again.
+    const dueReminders = reminders.filter((t) => Date.parse(t.remindAt!) <= now && !notified.includes(`remind:${t.snapshot.id}:${t.remindAt}`));
+    for (const t of dueReminders) {
+      new Notification(`⏰ ${t.snapshot.title}`, { body: t.notes ? t.notes.slice(0, 120) : "Your reminder", tag: `remind:${t.snapshot.id}` });
+    }
+    if (due.length || dueReminders.length) {
       try {
-        localStorage.setItem(NOTIFIED_KEY, JSON.stringify([...notified, ...due.map((h) => h.id)]));
+        const keys = [...due.map((h) => h.id), ...dueReminders.map((t) => `remind:${t.snapshot.id}:${t.remindAt}`)];
+        localStorage.setItem(NOTIFIED_KEY, JSON.stringify([...notified, ...keys].slice(-500)));
       } catch {}
     }
-  }, [permission, now, urgent]);
+  }, [permission, now, urgent, reminders]);
 
   const hasSaved = Object.keys(tracked).length > 0;
   const askPermission = permission === "default" && hasSaved;
-  if (urgent.length === 0 && !askPermission) return null;
+
+  const reminderBox = reminders.length > 0 && now !== null && (
+    <div className="rounded-xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-sm dark:border-indigo-900/70 dark:bg-indigo-950/30">
+      <p className="flex items-center gap-3 font-semibold text-indigo-900 dark:text-indigo-200">
+        <BellIcon size={16} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
+        Your reminders
+      </p>
+      <ul className="mt-2 max-w-2xl space-y-1 pl-7">
+        {reminders.map((t) => {
+          const ms = Date.parse(t.remindAt!) - now;
+          return (
+            <li key={t.snapshot.id} className="flex items-baseline gap-3">
+              <span className="min-w-0 flex-1 truncate text-indigo-950 dark:text-indigo-100" title={t.notes}>
+                {t.snapshot.title}
+              </span>
+              <span className="shrink-0 text-xs font-medium tabular-nums text-indigo-700 dark:text-indigo-300">
+                {ms <= 0 ? "now" : `in ${formatRemaining(ms)}`}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+
+  if (urgent.length === 0 && !askPermission) return reminderBox || null;
 
   const notifyButton = askPermission && (
     <button
@@ -69,16 +117,21 @@ export function DeadlineBanner() {
 
   if (urgent.length === 0) {
     return (
-      <div className="flex items-center gap-3 rounded-xl border border-zinc-200/80 bg-white px-4 py-2.5 text-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <BellIcon size={16} className="shrink-0 text-amber-500" />
-        <p className="flex-1 text-zinc-600 dark:text-zinc-300">Get a browser notification when a saved hackathon is a day from closing.</p>
-        {notifyButton}
-      </div>
+      <>
+        {reminderBox}
+        <div className="flex items-center gap-3 rounded-xl border border-zinc-200/80 bg-white px-4 py-2.5 text-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <BellIcon size={16} className="shrink-0 text-amber-500" />
+          <p className="flex-1 text-zinc-600 dark:text-zinc-300">Get a browser notification when a saved hackathon is a day from closing.</p>
+          {notifyButton}
+        </div>
+      </>
     );
   }
 
   const list = expanded ? urgent : urgent.slice(0, SHOWN);
   return (
+    <>
+    {reminderBox}
     <div className="rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm dark:border-amber-900/70 dark:bg-amber-950/30">
       <div className="flex items-center gap-3">
         <ClockIcon size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
@@ -110,5 +163,6 @@ export function DeadlineBanner() {
         </button>
       )}
     </div>
+    </>
   );
 }

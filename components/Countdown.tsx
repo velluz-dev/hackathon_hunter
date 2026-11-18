@@ -7,6 +7,7 @@ import { DAY, formatRemaining } from "@/lib/time";
 const SHORT: Record<string, string> = {
   "Submissions close": "Closes",
   "Registration closes": "Reg. closes",
+  "Applications close": "Apps close",
   Starts: "Starts",
 };
 

@@ -26,6 +26,8 @@ const EVENTS: CuratedEvent[] = [
     themes: ["Science", "Nuclear technology", "HackAtom", "Expected late Nov"],
     participants: null,
     organizer: "Rosatom & Ministry of Science and Technology",
+    description:
+      "Yearly science festival run by Rosatom with Myanmar's Ministry of Science and Technology, with exhibitions, talks and a HackAtom hackathon. Last year it ran Nov 24–28 in Nay Pyi Taw, then at YTU in Yangon. This year's dates haven't been announced.",
     hideAfter: "2026-12-31T00:00:00Z",
   },
   {
@@ -49,6 +51,8 @@ const EVENTS: CuratedEvent[] = [
     themes: ["Web & mobile", "Careers", "Japanese IT companies", "Free", "Ages 28 and under"],
     participants: null,
     organizer: "Myanmar-Japan Center (MJC) & Impact Hub Yangon",
+    description:
+      "A 6-day hackathon in Mandalay (Jan 24–29, 2027), then Demo Day and job matching with 10+ Japanese IT companies on Jan 30. Free, with accommodation for teams from out of town. Open to Myanmar nationals living in Myanmar, aged 28 or under in January 2027, with basic web or mobile skills. Apply by Nov 25, 11:59 PM Myanmar time; there's an online info session on Nov 19.",
     hideAfter: "2027-01-31T00:00:00Z",
   },
 ];

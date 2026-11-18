@@ -3,7 +3,10 @@ import { isMyanmar } from "./myanmar";
 import { safeUrl } from "./safeUrl";
 import { fetchCerebralValley } from "./sources/cerebralvalley";
 import { fetchCurated } from "./sources/curated";
+import { fetchDevfolio } from "./sources/devfolio";
 import { fetchDevpost } from "./sources/devpost";
+import { fetchDoraHacks } from "./sources/dorahacks";
+import { fetchHackClub } from "./sources/hackclub";
 import { fetchLablab } from "./sources/lablab";
 import { fetchLuma, fetchLumaMyanmar } from "./sources/luma";
 import { fetchMlh } from "./sources/mlh";
@@ -18,6 +21,9 @@ const SOURCES: [Source, () => Promise<RawHackathon[]>][] = [
   ["cerebralvalley", fetchCerebralValley],
   ["mlh", fetchMlh],
   ["lablab", fetchLablab],
+  ["devfolio", fetchDevfolio],
+  ["dorahacks", fetchDoraHacks],
+  ["hackclub", fetchHackClub],
   ["luma", fetchLuma],
   ["luma", fetchLumaMyanmar],
   ["spaceapps", fetchSpaceApps],
@@ -31,13 +37,17 @@ const titleKey = (t: string) => t.toLowerCase().replace(/[^a-z0-9]/g, "");
 export async function getHackathons(): Promise<HackathonsResponse> {
   const results = await Promise.allSettled(SOURCES.map(([, fn]) => fn()));
   const errors: HackathonsResponse["errors"] = [];
+  const counts: Partial<Record<Source, number>> = {};
   const seen = new Map<string, RawHackathon>();
 
   // Earlier sources win, so each title keeps the listing from the most informative site.
   results.forEach((r, i) => {
     const source = SOURCES[i][0];
     if (r.status === "rejected") {
-      errors.push({ source, message: r.reason instanceof Error ? r.reason.message : String(r.reason) });
+      // Luma is read twice (worldwide and Myanmar); report a failing source once.
+      if (!errors.some((e) => e.source === source)) {
+        errors.push({ source, message: r.reason instanceof Error ? r.reason.message : String(r.reason) });
+      }
       return;
     }
     for (const h of r.value) {
@@ -54,6 +64,7 @@ export async function getHackathons(): Promise<HackathonsResponse> {
     .filter((h) => !h.endDate || new Date(h.endDate).getTime() >= now)
     .map((h) => ({ ...h, companies: detectCompanies(h), myanmar: isMyanmar(h) }))
     .sort((a, b) => (a.deadline ?? "9").localeCompare(b.deadline ?? "9"));
+  for (const h of hackathons) counts[h.source] = (counts[h.source] ?? 0) + 1;
 
-  return { hackathons, errors, fetchedAt: new Date().toISOString() };
+  return { hackathons, errors, counts, fetchedAt: new Date().toISOString() };
 }

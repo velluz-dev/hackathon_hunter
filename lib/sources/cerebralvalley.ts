@@ -1,3 +1,4 @@
+import { plainText } from "../text";
 import type { RawHackathon } from "../types";
 
 // Cerebral Valley runs AI hackathons for Google DeepMind, Meta, OpenAI, Anthropic and others,
@@ -82,6 +83,7 @@ function normalize(e: CvEvent): RawHackathon {
     themes: ["AI"],
     participants: null,
     organizer: [...new Set(named)].join(", ") || null,
+    description: plainText(e.descriptionSummary),
   };
 }
 

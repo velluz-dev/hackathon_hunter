@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { GearIcon, HelpIcon, LogoMark } from "./icons";
+import { InstallIconButton } from "./Pwa";
 import { useTracker } from "@/lib/useTracker";
 
 const LINKS = [
@@ -91,6 +92,7 @@ export function Nav() {
               </Link>
             );
           })}
+          <InstallIconButton className={`${linkClass(false)} h-8 w-8 justify-center`} />
         </nav>
       </div>
     </header>

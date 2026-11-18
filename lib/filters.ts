@@ -1,3 +1,4 @@
+import { LISTED_SOURCES, sourceName } from "./sources/meta";
 import type { Hackathon, Mode, Source } from "./types";
 
 export type SortKey = "deadline" | "prize" | "participants" | "newest";
@@ -15,6 +16,7 @@ export interface FilterState {
   bigTech: boolean; // run or sponsored by any big tech company
   companies: string[]; // run or sponsored by one of these
   closingSoon: boolean; // deadline within 7 days
+  fresh: boolean; // first seen in this browser in the last two days
   beginner: boolean; // tagged or named as beginner friendly
   status: RegStatus;
   from: string; // yyyy-mm-dd, compared against start date
@@ -33,6 +35,7 @@ export const DEFAULT_FILTERS: FilterState = {
   bigTech: false,
   companies: [],
   closingSoon: false,
+  fresh: false,
   beginner: false,
   status: "any",
   from: "",
@@ -41,7 +44,7 @@ export const DEFAULT_FILTERS: FilterState = {
 };
 
 const MODES = ["all", "online", "in-person", "hybrid"];
-const SOURCES = ["all", "devpost", "mlh", "cerebralvalley", "lablab", "luma", "spaceapps", "gdg", "curated"];
+const SOURCES = ["all", ...LISTED_SOURCES];
 const SORTS = ["deadline", "prize", "participants", "newest"];
 const STATUSES = ["any", "open", "started", "tba"];
 
@@ -59,6 +62,7 @@ export function filtersFromParams(p: URLSearchParams): FilterState {
     bigTech: p.get("bigtech") === "1",
     companies: p.get("co")?.split(",").filter(Boolean) ?? [],
     closingSoon: p.get("closing") === "1",
+    fresh: p.get("new") === "1",
     beginner: p.get("beginner") === "1",
     status: pick("status", STATUSES, "any"),
     from: p.get("from") ?? "",
@@ -79,6 +83,7 @@ export function filtersToParams(f: FilterState): URLSearchParams {
   if (f.bigTech) p.set("bigtech", "1");
   if (f.companies.length) p.set("co", f.companies.join(","));
   if (f.closingSoon) p.set("closing", "1");
+  if (f.fresh) p.set("new", "1");
   if (f.beginner) p.set("beginner", "1");
   if (f.status !== "any") p.set("status", f.status);
   if (f.from) p.set("from", f.from);
@@ -87,14 +92,30 @@ export function filtersToParams(f: FilterState): URLSearchParams {
   return p;
 }
 
-export function applyFilters(list: Hackathon[], f: FilterState, now: number): Hackathon[] {
-  const q = f.q.trim().toLowerCase();
+/** Everything a search can match: name, organizer, sponsors, themes, place, source and companies. */
+function searchText(h: Hackathon): string {
+  return [h.title, h.organizer ?? "", ...(h.sponsors ?? []), ...h.themes, h.location, sourceName(h.source), ...h.companies, h.mode]
+    .join("\n")
+    .toLowerCase();
+}
+
+/**
+ * Filters and sorts the listings. `freshIds` (listings this browser saw for the first time
+ * recently) is only known in the browser; without it the "new" filter is ignored.
+ */
+export function applyFilters(list: Hackathon[], f: FilterState, now: number, freshIds?: ReadonlySet<string>): Hackathon[] {
+  // Every word must match somewhere, so "ai myanmar" finds AI events in Myanmar.
+  const words = f.q.toLowerCase().replace(/["“”]/g, " ").split(/\s+/).filter(Boolean);
   const loc = f.loc.trim().toLowerCase();
   const from = f.from ? Date.parse(f.from) : null;
   const to = f.to ? Date.parse(f.to) + 86_399_999 : null;
 
   const out = list.filter((h) => {
-    if (q && ![h.title, h.organizer ?? "", ...h.themes].some((s) => s.toLowerCase().includes(q))) return false;
+    if (words.length) {
+      const text = searchText(h);
+      if (!words.every((w) => text.includes(w))) return false;
+    }
+    if (f.fresh && freshIds && !freshIds.has(h.id)) return false;
     if (f.mode !== "all" && h.mode !== f.mode) return false;
     if (loc && !h.location.toLowerCase().includes(loc)) return false;
     if (f.source !== "all" && h.source !== f.source) return false;

@@ -25,9 +25,10 @@ export const COMPANIES: { name: string; pattern: RegExp }[] = [
 
 // Local student and community chapters carry a company's name but aren't run by it.
 const COMMUNITY_GROUP =
-  /\b(google developer groups?|gdg)( on campus)?\b|\baws (student|community) builders?( group)?\b|\bmicrosoft (learn )?student ambassadors?\b/gi;
+  /\b(google developer groups?|gdg)( on campus)?\b|\baws (student|community) builders?( group)?\b|\baws cloud clubs?\b|\bmicrosoft (learn )?student ambassadors?\b/gi;
 
-export function detectCompanies(h: Pick<Hackathon, "title" | "organizer">): string[] {
-  const text = `${h.title} \n ${h.organizer ?? ""}`.replace(COMMUNITY_GROUP, " ");
+/** Companies named in the title, organizer or sponsor list. */
+export function detectCompanies(h: Pick<Hackathon, "title" | "organizer" | "sponsors">): string[] {
+  const text = `${h.title} \n ${h.organizer ?? ""} \n ${(h.sponsors ?? []).join(" \n ")}`.replace(COMMUNITY_GROUP, " ");
   return COMPANIES.filter((c) => c.pattern.test(text)).map((c) => c.name);
 }
